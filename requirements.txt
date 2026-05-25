@@ -1,0 +1,12 @@
+fastapi==0.111.0
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-jose[cryptography]
+bcrypt
+python-multipart
+pydantic
+pydantic-settings
+python-dotenv
+sshtunnel
+paramiko<3.0
