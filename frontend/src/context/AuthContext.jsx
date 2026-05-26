@@ -13,12 +13,12 @@ export function AuthProvider({ children }) {
     }
   })
 
-  const login = useCallback(async (логин, пароль) => {
-    const data = await apiLogin(логин, пароль)
+  const login = useCallback(async (login, password) => {
+    const data = await apiLogin(login, password)
     localStorage.setItem('token', data.access_token)
-    localStorage.setItem('user', JSON.stringify(data.пользователь))
-    setUser(data.пользователь)
-    return data.пользователь
+    localStorage.setItem('user', JSON.stringify(data.user))
+    setUser(data.user)
+    return data.user
   }, [])
 
   const logout = useCallback(async () => {
@@ -30,8 +30,8 @@ export function AuthProvider({ children }) {
     setUser(null)
   }, [])
 
-  const isAdmin = user?.роль === 'ADMIN'
-  const isPositionerOrAdmin = user?.роль === 'POSITIONER' || user?.роль === 'ADMIN'
+  const isAdmin = user?.role === 'ADMIN'
+  const isPositionerOrAdmin = user?.role === 'POSITIONER' || user?.role === 'ADMIN'
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isAdmin, isPositionerOrAdmin }}>

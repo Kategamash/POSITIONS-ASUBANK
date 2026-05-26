@@ -14,9 +14,9 @@ def list_currencies(current_user: CurrentUser, db: Session = Depends(get_db)):
     return db.query(Currency).all()
 
 
-@router.get("/{код}", response_model=CurrencyRead, summary="Валюта по коду")
-def get_currency(код: str, current_user: CurrentUser, db: Session = Depends(get_db)):
-    currency = db.query(Currency).filter(Currency.код == код.upper()).first()
+@router.get("/{code}", response_model=CurrencyRead, summary="Валюта по коду")
+def get_currency(code: str, current_user: CurrentUser, db: Session = Depends(get_db)):
+    currency = db.query(Currency).filter(Currency.code == code.upper()).first()
     if not currency:
         raise HTTPException(status_code=404, detail="Валюта не найдена")
     return currency
@@ -30,12 +30,12 @@ def get_currency(код: str, current_user: CurrentUser, db: Session = Depends(g
     dependencies=[Depends(require_admin)],
 )
 def create_currency(body: CurrencyCreate, db: Session = Depends(get_db)):
-    if db.query(Currency).filter(Currency.код == body.код.upper()).first():
+    if db.query(Currency).filter(Currency.code == body.code.upper()).first():
         raise HTTPException(status_code=409, detail="Валюта с таким кодом уже существует")
     currency = Currency(
-        код=body.код.upper(),
-        наименование=body.наименование,
-        знаков_после_запятой=body.знаков_после_запятой,
+        code=body.code.upper(),
+        name=body.name,
+        decimal_places=body.decimal_places,
     )
     db.add(currency)
     db.commit()
@@ -44,13 +44,13 @@ def create_currency(body: CurrencyCreate, db: Session = Depends(get_db)):
 
 
 @router.delete(
-    "/{код}",
+    "/{code}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Удалить валюту (Администратор)",
     dependencies=[Depends(require_admin)],
 )
-def delete_currency(код: str, db: Session = Depends(get_db)):
-    currency = db.query(Currency).filter(Currency.код == код.upper()).first()
+def delete_currency(code: str, db: Session = Depends(get_db)):
+    currency = db.query(Currency).filter(Currency.code == code.upper()).first()
     if not currency:
         raise HTTPException(status_code=404, detail="Валюта не найдена")
     db.delete(currency)

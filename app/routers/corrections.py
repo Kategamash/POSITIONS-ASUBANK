@@ -19,13 +19,13 @@ router = APIRouter(prefix="/corrections", tags=["Корректировка ос
 )
 def list_corrections(
     current_user: CurrentUser,
-    id_входящего_остатка: UUID | None = None,
+    opening_balance_id: UUID | None = None,
     db: Session = Depends(get_db),
 ):
     q = db.query(Correction)
-    if id_входящего_остатка:
-        q = q.filter(Correction.id_входящего_остатка == id_входящего_остатка)
-    return q.order_by(Correction.дата_время.desc()).all()
+    if opening_balance_id:
+        q = q.filter(Correction.opening_balance_id == opening_balance_id)
+    return q.order_by(Correction.created_at.desc()).all()
 
 
 @router.post(
@@ -41,37 +41,37 @@ def create_correction(
     request: Request,
     db: Session = Depends(get_db),
 ):
-    ob = db.query(OpeningBalance).filter(OpeningBalance.id == body.id_входящего_остатка).first()
+    ob = db.query(OpeningBalance).filter(OpeningBalance.id == body.opening_balance_id).first()
     if not ob:
         raise HTTPException(status_code=404, detail="Входящий остаток не найден")
 
-    old_sum = float(ob.сумма_корректировок)
-    ob.сумма_корректировок += body.сумма
-    ob.скорректирован = True
+    old_sum = float(ob.corrections_amount)
+    ob.corrections_amount += body.amount
+    ob.is_corrected = True
 
     correction = Correction(
-        id_входящего_остатка=ob.id,
-        пользователь_id=current_user.id,
-        сумма=body.сумма,
-        комментарий=body.комментарий,
+        opening_balance_id=ob.id,
+        user_id=current_user.id,
+        amount=body.amount,
+        comment=body.comment,
     )
     db.add(correction)
 
     db.add(AuditLog(
-        пользователь_id=current_user.id,
-        логин=current_user.логин,
-        действие="CORRECTION_CREATED",
-        сущность="входящий_остаток",
-        сущность_id=str(ob.id),
-        детали={
-            "счет_id": str(ob.id_счета),
-            "дата": str(ob.дата),
-            "сумма_корректировки": float(body.сумма),
-            "сумма_до": old_sum,
-            "сумма_после": float(ob.сумма_корректировок),
-            "комментарий": body.комментарий,
+        user_id=current_user.id,
+        login=current_user.login,
+        action="CORRECTION_CREATED",
+        entity="opening_balances",
+        entity_id=str(ob.id),
+        details={
+            "account_id": str(ob.account_id),
+            "date": str(ob.date),
+            "correction_amount": float(body.amount),
+            "amount_before": old_sum,
+            "amount_after": float(ob.corrections_amount),
+            "comment": body.comment,
         },
-        ip_адрес=request.client.host if request.client else None,
+        ip_address=request.client.host if request.client else None,
     ))
 
     db.commit()

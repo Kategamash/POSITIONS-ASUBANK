@@ -6,9 +6,9 @@ from pydantic import BaseModel
 
 
 class OpeningBalanceBase(BaseModel):
-    id_счета: UUID
-    дата: date
-    сумма: Decimal = Decimal("0")
+    account_id: UUID
+    date: date
+    amount: Decimal = Decimal("0")
 
 
 class OpeningBalanceCreate(OpeningBalanceBase):
@@ -17,8 +17,8 @@ class OpeningBalanceCreate(OpeningBalanceBase):
 
 class OpeningBalanceRead(OpeningBalanceBase):
     id: UUID
-    сумма_корректировок: Decimal
-    скорректирован: bool
-    дата_расчета: Optional[datetime] = None
+    corrections_amount: Decimal
+    is_corrected: bool
+    calculated_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}

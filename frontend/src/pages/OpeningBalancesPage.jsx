@@ -27,8 +27,8 @@ export default function OpeningBalancesPage() {
     setLoading(true)
     try {
       const params = {}
-      if (filterDate) params.дата = filterDate.format('YYYY-MM-DD')
-      if (filterAccount) params.id_счета = filterAccount
+      if (filterDate) params.date = filterDate.format('YYYY-MM-DD')
+      if (filterAccount) params.account_id = filterAccount
       setData(await getOpeningBalances(params))
     } catch {
       message.error('Ошибка загрузки входящих остатков')
@@ -49,9 +49,9 @@ export default function OpeningBalancesPage() {
     setSaving(true)
     try {
       await createOpeningBalance({
-        id_счета: values.id_счета,
-        дата: values.дата.format('YYYY-MM-DD'),
-        сумма: values.сумма,
+        account_id: values.account_id,
+        date: values.date.format.format('YYYY-MM-DD'),
+        amount: values.amount,
       })
       message.success('Входящий остаток установлен')
       setModalOpen(false)
@@ -69,14 +69,14 @@ export default function OpeningBalancesPage() {
   const columns = [
     {
       title: 'Счёт',
-      dataIndex: 'id_счета',
-      key: 'id_счета',
+      dataIndex: 'account_id',
+      key: 'account_id',
       render: (v) => {
         const acc = accountMap[v]
         return acc ? (
           <Space>
-            <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{acc.номер_счета}</span>
-            <Tag color="blue">{acc.код_валюты}</Tag>
+            <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{acc.account_number}</span>
+            <Tag color="blue">{acc.currency_code}</Tag>
           </Space>
         ) : (
           <span style={{ fontFamily: 'monospace', color: '#8c8c8c' }}>{v}</span>
@@ -85,22 +85,22 @@ export default function OpeningBalancesPage() {
     },
     {
       title: 'Дата',
-      dataIndex: 'дата',
-      key: 'дата',
+      dataIndex: 'date',
+      key: 'date',
       width: 120,
       render: formatDate,
     },
     {
       title: 'Сумма',
-      dataIndex: 'сумма',
-      key: 'сумма',
+      dataIndex: 'amount',
+      key: 'amount',
       align: 'right',
       render: formatAmount,
     },
     {
       title: 'Корректировки',
-      dataIndex: 'сумма_корректировок',
-      key: 'сумма_корректировок',
+      dataIndex: 'corrections_amount',
+      key: 'corrections_amount',
       align: 'right',
       render: (v) => {
         const n = Number(v)
@@ -111,8 +111,8 @@ export default function OpeningBalancesPage() {
     },
     {
       title: 'Скорректирован',
-      dataIndex: 'скорректирован',
-      key: 'скорректирован',
+      dataIndex: 'is_corrected',
+      key: 'is_corrected',
       align: 'center',
       width: 130,
       render: (v) =>
@@ -150,7 +150,7 @@ export default function OpeningBalancesPage() {
               onChange={setFilterAccount}
               options={accounts.map((a) => ({
                 value: a.id,
-                label: `${a.номер_счета} (${a.код_валюты})`,
+                label: `${a.account_number} (${a.currency_code})`,
               }))}
               showSearch
               filterOption={(input, opt) =>
@@ -195,7 +195,7 @@ export default function OpeningBalancesPage() {
       >
         <Form form={form} onFinish={onSave} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
-            name="id_счета"
+            name="account_id"
             label="Счёт ностро"
             rules={[{ required: true, message: 'Выберите счёт' }]}
           >
@@ -204,7 +204,7 @@ export default function OpeningBalancesPage() {
               showSearch
               options={accounts.map((a) => ({
                 value: a.id,
-                label: `${a.номер_счета} — ${a.наименование} (${a.код_валюты})`,
+                label: `${a.account_number} — ${a.name} (${a.currency_code})`,
               }))}
               filterOption={(input, opt) =>
                 opt.label.toLowerCase().includes(input.toLowerCase())
@@ -212,14 +212,14 @@ export default function OpeningBalancesPage() {
             />
           </Form.Item>
           <Form.Item
-            name="дата"
+            name="date"
             label="Дата"
             rules={[{ required: true, message: 'Укажите дату' }]}
           >
             <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
           </Form.Item>
           <Form.Item
-            name="сумма"
+            name="amount"
             label="Сумма входящего остатка"
             rules={[{ required: true, message: 'Укажите сумму' }]}
           >

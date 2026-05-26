@@ -14,7 +14,7 @@ export default function LoginPage() {
   const onFinish = async (values) => {
     setLoading(true)
     try {
-      await login(values.логин, values.пароль)
+      await login(values.login, values.password)
       navigate('/')
     } catch (err) {
       message.error(err.response?.data?.detail || 'Неверный логин или пароль')
@@ -44,14 +44,14 @@ export default function LoginPage() {
 
         <Form onFinish={onFinish} layout="vertical" size="large" requiredMark={false}>
           <Form.Item
-            name="логин"
+            name="login"
             label="Логин"
             rules={[{ required: true, message: 'Введите логин' }]}
           >
             <Input prefix={<UserOutlined />} placeholder="Введите логин" autoComplete="username" />
           </Form.Item>
           <Form.Item
-            name="пароль"
+            name="password"
             label="Пароль"
             rules={[{ required: true, message: 'Введите пароль' }]}
           >

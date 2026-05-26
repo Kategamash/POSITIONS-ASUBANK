@@ -1,12 +1,12 @@
 """
-Роутер интеграционных заглушек (моков).
+Integration mock router.
 
-- GET  /integration/fx/deals         — симулирует ответ FX-АСУБАНК (список сделок)
-- POST /integration/fx/notify        — симулирует получение уведомления о превышении лимита от нас
-- GET  /integration/reports/positions — данные позиций для системы ОТЧЕТЫ-АСУБАНК
+- GET  /integration/fx/deals          — mock FX-ASUBANK deals list
+- POST /integration/fx/notify         — mock limit exceeded notification receiver
+- GET  /integration/reports/positions — position export for REPORTS-ASUBANK
 """
 from datetime import date
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -21,32 +21,28 @@ router = APIRouter(prefix="/integration", tags=["Интеграция (моки)
 
 @router.get("/fx/deals", summary="[МОК FX-АСУБАНК] Список подтверждённых сделок")
 def mock_fx_deals(current_user: CurrentUser):
-    """
-    Заглушка: имитирует данные, которые FX-АСУБАНК мог бы передавать.
-    В production эта система была бы внешней.
-    """
     return {
-        "источник": "FX-АСУБАНК (мок)",
-        "сделки": [
+        "source": "FX-ASUBANK (mock)",
+        "deals": [
             {
                 "id": str(uuid4()),
-                "тип": "TOD",
-                "статус": "Верифицировано",
-                "валюта_покупки": "USD",
-                "валюта_продажи": "RUB",
-                "сумма": 1000000.00,
-                "дата_валютирования": str(date.today()),
-                "трейдер": "trader01",
+                "type": "TOD",
+                "status": "Verified",
+                "buy_currency": "USD",
+                "sell_currency": "RUB",
+                "amount": 1000000.00,
+                "value_date": str(date.today()),
+                "trader": "trader01",
             },
             {
                 "id": str(uuid4()),
-                "тип": "TOM",
-                "статус": "Верифицировано",
-                "валюта_покупки": "EUR",
-                "валюта_продажи": "RUB",
-                "сумма": 500000.00,
-                "дата_валютирования": str(date.today()),
-                "трейдер": "trader02",
+                "type": "TOM",
+                "status": "Verified",
+                "buy_currency": "EUR",
+                "sell_currency": "RUB",
+                "amount": 500000.00,
+                "value_date": str(date.today()),
+                "trader": "trader02",
             },
         ],
     }
@@ -54,14 +50,10 @@ def mock_fx_deals(current_user: CurrentUser):
 
 @router.post("/fx/notify", summary="[МОК FX-АСУБАНК] Принять уведомление о превышении лимита")
 def mock_fx_receive_notification(body: dict):
-    """
-    Заглушка: имитирует эндпоинт FX-АСУБАНК, куда мы отправляем уведомление о превышении лимита.
-    Логирует полученные данные.
-    """
     return {
-        "статус": "получено",
-        "источник": "ПОЗИЦИИ-АСУБАНК",
-        "полученные_данные": body,
+        "status": "received",
+        "source": "POSITIONS-ASUBANK",
+        "received_data": body,
     }
 
 
@@ -71,32 +63,28 @@ def mock_fx_receive_notification(body: dict):
 )
 def export_positions_for_reports(
     current_user: CurrentUser,
-    дата: date = Query(default_factory=date.today),
+    date: date = Query(default_factory=date.today),
     db: Session = Depends(get_db),
 ):
-    """
-    Эндпоинт, который вызывает система ОТЧЕТЫ-АСУБАНК для получения данных позиций.
-    Возвращает позиции по всем активным счетам на указанную дату.
-    """
-    accounts = db.query(Account).filter(Account.активен == True).all()
+    accounts = db.query(Account).filter(Account.is_active == True).all()
     positions = []
     for acc in accounts:
-        pos = calculate_current_position(db, acc.id, дата)
+        pos = calculate_current_position(db, acc.id, date)
         if pos:
             positions.append({
-                "счет": pos.номер_счета,
-                "наименование": pos.наименование_счета,
-                "валюта": pos.код_валюты,
-                "дата": str(pos.дата),
-                "входящий_остаток": float(pos.входящий_остаток),
-                "корректировки": float(pos.сумма_корректировок),
-                "оборот_in": float(pos.оборот_in),
-                "оборот_out": float(pos.оборот_out),
-                "текущая_позиция": float(pos.текущая_позиция),
+                "account_number": pos.account_number,
+                "name": pos.account_name,
+                "currency_code": pos.currency_code,
+                "date": str(pos.date),
+                "opening_balance": float(pos.opening_balance),
+                "corrections_amount": float(pos.corrections_amount),
+                "turnover_in": float(pos.turnover_in),
+                "turnover_out": float(pos.turnover_out),
+                "current_position": float(pos.current_position),
             })
     return {
-        "источник": "ПОЗИЦИИ-АСУБАНК",
-        "дата": str(дата),
-        "количество_счетов": len(positions),
-        "позиции": positions,
+        "source": "POSITIONS-ASUBANK",
+        "date": str(date),
+        "account_count": len(positions),
+        "positions": positions,
     }

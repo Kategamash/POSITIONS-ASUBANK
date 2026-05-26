@@ -50,9 +50,9 @@ export default function UsersPage() {
   const openEdit = (record) => {
     setEditRecord(record)
     form.setFieldsValue({
-      полное_имя: record.полное_имя,
-      роль: record.роль,
-      активен: record.активен,
+      full_name: record.full_name,
+      role: record.role,
+      is_active: record.is_active,
     })
     setModalOpen(true)
   }
@@ -62,18 +62,18 @@ export default function UsersPage() {
     try {
       if (editRecord) {
         const payload = {}
-        if (values.полное_имя !== editRecord.полное_имя) payload.полное_имя = values.полное_имя
-        if (values.роль !== editRecord.роль) payload.роль = values.роль
-        if (values.активен !== editRecord.активен) payload.активен = values.активен
-        if (values.пароль) payload.пароль = values.пароль
+        if (values.full_name !== editRecord.full_name) payload.full_name = values.full_name
+        if (values.role !== editRecord.role) payload.role = values.role
+        if (values.is_active !== editRecord.is_active) payload.is_active = values.is_active
+        if (values.password) payload.password = values.password
         await updateUser(editRecord.id, payload)
         message.success('Пользователь обновлён')
       } else {
         await createUser({
-          логин: values.логин,
-          пароль: values.пароль,
-          полное_имя: values.полное_имя,
-          роль: values.роль,
+          login: values.login,
+          password: values.password,
+          full_name: values.full_name,
+          role: values.role,
         })
         message.success('Пользователь создан')
       }
@@ -105,19 +105,19 @@ export default function UsersPage() {
           <Avatar
             size="small"
             icon={<UserOutlined />}
-            style={{ background: roleMap[r.роль]?.color === 'red' ? '#f5222d' : '#1677ff' }}
+            style={{ background: roleMap[r.role]?.color === 'red' ? '#f5222d' : '#1677ff' }}
           />
           <div>
-            <div style={{ fontWeight: 500 }}>{r.полное_имя}</div>
-            <div style={{ fontSize: 12, color: '#8c8c8c', fontFamily: 'monospace' }}>{r.логин}</div>
+            <div style={{ fontWeight: 500 }}>{r.full_name}</div>
+            <div style={{ fontSize: 12, color: '#8c8c8c', fontFamily: 'monospace' }}>{r.login}</div>
           </div>
         </Space>
       ),
     },
     {
       title: 'Роль',
-      dataIndex: 'роль',
-      key: 'роль',
+      dataIndex: 'role',
+      key: 'role',
       width: 150,
       render: (v) => {
         const meta = roleMap[v]
@@ -130,8 +130,8 @@ export default function UsersPage() {
     },
     {
       title: 'Статус',
-      dataIndex: 'активен',
-      key: 'активен',
+      dataIndex: 'is_active',
+      key: 'is_active',
       width: 100,
       align: 'center',
       render: (v) =>
@@ -143,8 +143,8 @@ export default function UsersPage() {
     },
     {
       title: 'Создан',
-      dataIndex: 'дата_создания',
-      key: 'дата_создания',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 160,
       render: formatDateTime,
     },
@@ -161,7 +161,7 @@ export default function UsersPage() {
             onClick={() => openEdit(record)}
             size="small"
           />
-          {record.активен && record.id !== me?.id && (
+          {record.is_active && record.id !== me?.id && (
             <Popconfirm
               title="Деактивировать пользователя?"
               onConfirm={() => onDeactivate(record.id)}
@@ -219,7 +219,7 @@ export default function UsersPage() {
         <Form form={form} onFinish={onSave} layout="vertical" style={{ marginTop: 16 }}>
           {!editRecord && (
             <Form.Item
-              name="логин"
+              name="login"
               label="Логин"
               rules={[{ required: true, message: 'Введите логин' }]}
             >
@@ -227,14 +227,14 @@ export default function UsersPage() {
             </Form.Item>
           )}
           <Form.Item
-            name="полное_имя"
+            name="full_name"
             label="Полное имя"
             rules={[{ required: true, message: 'Введите имя' }]}
           >
             <Input placeholder="Иванов Иван Иванович" />
           </Form.Item>
           <Form.Item
-            name="роль"
+            name="role"
             label="Роль"
             rules={[{ required: true, message: 'Выберите роль' }]}
           >
@@ -243,12 +243,12 @@ export default function UsersPage() {
             />
           </Form.Item>
           {editRecord && (
-            <Form.Item name="активен" label="Статус" valuePropName="checked">
+            <Form.Item name="is_active" label="Статус" valuePropName="checked">
               <Switch checkedChildren="Активен" unCheckedChildren="Отключён" />
             </Form.Item>
           )}
           <Form.Item
-            name="пароль"
+            name="password"
             label={editRecord ? 'Новый пароль (оставьте пустым, чтобы не менять)' : 'Пароль'}
             rules={
               !editRecord ? [{ required: true, message: 'Введите пароль' }] : []

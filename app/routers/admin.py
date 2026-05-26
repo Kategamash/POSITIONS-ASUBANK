@@ -30,28 +30,28 @@ def list_users(db: Session = Depends(get_db)):
     dependencies=[Depends(require_admin)],
 )
 def create_user(body: UserCreate, request: Request, db: Session = Depends(get_db)):
-    if body.роль not in ROLES:
+    if body.role not in ROLES:
         raise HTTPException(status_code=400, detail=f"Недопустимая роль. Доступны: {ROLES}")
-    if db.query(User).filter(User.логин == body.логин).first():
+    if db.query(User).filter(User.login == body.login).first():
         raise HTTPException(status_code=409, detail="Пользователь с таким логином уже существует")
 
     user = User(
-        логин=body.логин,
-        хэш_пароля=hash_password(body.пароль),
-        полное_имя=body.полное_имя,
-        роль=body.роль,
+        login=body.login,
+        password_hash=hash_password(body.password),
+        full_name=body.full_name,
+        role=body.role,
     )
     db.add(user)
     db.flush()
 
     db.add(AuditLog(
-        пользователь_id=user.id,
-        логин=user.логин,
-        действие="USER_CREATED",
-        сущность="пользователи",
-        сущность_id=str(user.id),
-        детали={"роль": user.роль, "полное_имя": user.полное_имя},
-        ip_адрес=request.client.host if request.client else None,
+        user_id=user.id,
+        login=user.login,
+        action="USER_CREATED",
+        entity="users",
+        entity_id=str(user.id),
+        details={"role": user.role, "full_name": user.full_name},
+        ip_address=request.client.host if request.client else None,
     ))
     db.commit()
     db.refresh(user)
@@ -70,26 +70,26 @@ def update_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    if body.роль and body.роль not in ROLES:
+    if body.role and body.role not in ROLES:
         raise HTTPException(status_code=400, detail=f"Недопустимая роль. Доступны: {ROLES}")
 
     changes = {}
     for field, value in body.model_dump(exclude_none=True).items():
-        if field == "пароль":
-            user.хэш_пароля = hash_password(value)
-            changes["пароль"] = "изменён"
+        if field == "password":
+            user.password_hash = hash_password(value)
+            changes["password"] = "changed"
         else:
             changes[field] = value
             setattr(user, field, value)
 
     db.add(AuditLog(
-        пользователь_id=user.id,
-        логин=user.логин,
-        действие="USER_UPDATED",
-        сущность="пользователи",
-        сущность_id=str(user.id),
-        детали=changes,
-        ip_адрес=request.client.host if request.client else None,
+        user_id=user.id,
+        login=user.login,
+        action="USER_UPDATED",
+        entity="users",
+        entity_id=str(user.id),
+        details=changes,
+        ip_address=request.client.host if request.client else None,
     ))
     db.commit()
     db.refresh(user)
@@ -106,14 +106,14 @@ def deactivate_user(user_id: UUID, request: Request, db: Session = Depends(get_d
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
-    user.активен = False
+    user.is_active = False
     db.add(AuditLog(
-        пользователь_id=user.id,
-        логин=user.логин,
-        действие="USER_DEACTIVATED",
-        сущность="пользователи",
-        сущность_id=str(user.id),
-        ip_адрес=request.client.host if request.client else None,
+        user_id=user.id,
+        login=user.login,
+        action="USER_DEACTIVATED",
+        entity="users",
+        entity_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
     ))
     db.commit()
 
@@ -124,13 +124,13 @@ def deactivate_user(user_id: UUID, request: Request, db: Session = Depends(get_d
     dependencies=[Depends(require_admin)],
 )
 def get_audit_log(
-    логин: str | None = None,
-    действие: str | None = None,
+    login: str | None = None,
+    action: str | None = None,
     db: Session = Depends(get_db),
 ):
     q = db.query(AuditLog)
-    if логин:
-        q = q.filter(AuditLog.логин == логин)
-    if действие:
-        q = q.filter(AuditLog.действие == действие)
-    return q.order_by(AuditLog.дата_время.desc()).limit(500).all()
+    if login:
+        q = q.filter(AuditLog.login == login)
+    if action:
+        q = q.filter(AuditLog.action == action)
+    return q.order_by(AuditLog.created_at.desc()).limit(500).all()

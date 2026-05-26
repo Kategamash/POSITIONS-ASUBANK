@@ -17,6 +17,7 @@ export default function CorrectionsPage() {
   const { isPositionerOrAdmin } = useAuth()
   const [data, setData] = useState([])
   const [accounts, setAccounts] = useState([])
+  const [openingBalances, setOpeningBalances] = useState([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -41,6 +42,7 @@ export default function CorrectionsPage() {
 
   useEffect(() => {
     getAccounts().then(setAccounts).catch(() => {})
+    getOpeningBalances().then(setOpeningBalances).catch(() => {})
     load()
   }, [])
 
@@ -49,8 +51,8 @@ export default function CorrectionsPage() {
       setLoadingOB(true)
       setOpeningBalance(null)
       getOpeningBalances({
-        id_счета: selectedAccount,
-        дата: selectedDate.format('YYYY-MM-DD'),
+        account_id: selectedAccount,
+        date: selectedDate.format('YYYY-MM-DD'),
       })
         .then((list) => setOpeningBalance(list[0] || null))
         .catch(() => setOpeningBalance(null))
@@ -68,9 +70,9 @@ export default function CorrectionsPage() {
     setSaving(true)
     try {
       await createCorrection({
-        id_входящего_остатка: openingBalance.id,
-        сумма: values.сумма,
-        комментарий: values.комментарий || null,
+        opening_balance_id: openingBalance.id,
+        amount: values.amount,
+        comment: values.comment || null,
       })
       message.success('Корректировка создана')
       setModalOpen(false)
@@ -91,28 +93,39 @@ export default function CorrectionsPage() {
   }
 
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]))
+  const openingBalanceMap = Object.fromEntries(openingBalances.map((ob) => [ob.id, ob]))
 
   const columns = [
     {
       title: 'Дата/время',
-      dataIndex: 'дата_время',
-      key: 'дата_время',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 170,
       render: formatDateTime,
     },
     {
       title: 'Счёт',
-      dataIndex: 'id_входящего_остатка',
-      key: 'id_счета',
-      render: (obId) => {
-        const ob = data.find((d) => d.id === obId)
-        return <span style={{ fontFamily: 'monospace', color: '#8c8c8c', fontSize: 12 }}>{obId}</span>
+      dataIndex: 'opening_balance_id',
+      key: 'account',
+      render: (openingBalanceId) => {
+        const ob = openingBalanceMap[openingBalanceId]
+        const acc = ob ? accountMap[ob.account_id] : null
+        return acc ? (
+          <Space>
+            <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{acc.account_number}</span>
+            <Tag color="blue">{acc.currency_code}</Tag>
+          </Space>
+        ) : (
+          <span style={{ fontFamily: 'monospace', color: '#8c8c8c', fontSize: 12 }}>
+            {openingBalanceId}
+          </span>
+        )
       },
     },
     {
       title: 'Сумма корректировки',
-      dataIndex: 'сумма',
-      key: 'сумма',
+      dataIndex: 'amount',
+      key: 'amount',
       align: 'right',
       render: (v) => {
         const n = Number(v)
@@ -122,8 +135,8 @@ export default function CorrectionsPage() {
     },
     {
       title: 'Комментарий',
-      dataIndex: 'комментарий',
-      key: 'комментарий',
+      dataIndex: 'comment',
+      key: 'comment',
       ellipsis: true,
       render: (v) => v || <Text type="secondary">—</Text>,
     },
@@ -186,7 +199,7 @@ export default function CorrectionsPage() {
                 onChange={setSelectedAccount}
                 options={accounts.map((a) => ({
                   value: a.id,
-                  label: `${a.номер_счета} — ${a.наименование} (${a.код_валюты})`,
+                  label: `${a.account_number} — ${a.name} (${a.currency_code})`,
                 }))}
                 filterOption={(input, opt) =>
                   opt.label.toLowerCase().includes(input.toLowerCase())
@@ -227,16 +240,16 @@ export default function CorrectionsPage() {
               />
               <Descriptions bordered size="small" column={1}>
                 <Descriptions.Item label="Текущий остаток">
-                  {formatAmount(openingBalance.сумма)}
+                  {formatAmount(openingBalance.amount)}
                 </Descriptions.Item>
                 <Descriptions.Item label="Накопленные корректировки">
-                  {formatAmount(openingBalance.сумма_корректировок)}
+                  {formatAmount(openingBalance.corrections_amount)}
                 </Descriptions.Item>
               </Descriptions>
 
               <Form form={form} onFinish={onSave} layout="vertical">
                 <Form.Item
-                  name="сумма"
+                  name="amount"
                   label="Сумма корректировки (отрицательная — уменьшение)"
                   rules={[
                     { required: true, message: 'Введите сумму' },
@@ -253,7 +266,7 @@ export default function CorrectionsPage() {
                     formatter={(v) => (v ? `${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '')}
                   />
                 </Form.Item>
-                <Form.Item name="комментарий" label="Комментарий">
+                <Form.Item name="comment" label="Комментарий">
                   <Input.TextArea rows={2} placeholder="Причина корректировки" />
                 </Form.Item>
               </Form>

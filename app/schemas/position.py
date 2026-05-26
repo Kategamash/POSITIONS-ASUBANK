@@ -6,25 +6,25 @@ from pydantic import BaseModel
 
 class PositionRead(BaseModel):
     id: UUID
-    id_платежа: UUID
-    id_входящего_остатка: UUID
-    дата: date
-    сумма: Decimal
+    payment_id: UUID
+    opening_balance_id: UUID
+    date: date
+    amount: Decimal
 
     model_config = {"from_attributes": True}
 
 
 class CurrentPositionRead(BaseModel):
-    """Текущая позиция по счёту — агрегированный расчёт"""
-    id_счета: UUID
-    номер_счета: str
-    наименование_счета: str
-    код_валюты: str
-    дата: date
-    входящий_остаток: Decimal
-    сумма_корректировок: Decimal
-    оборот_in: Decimal
-    оборот_out: Decimal
-    текущая_позиция: Decimal
-    лимит: Decimal | None
-    превышение_лимита: bool
+    """Current position for an account — aggregated calculation"""
+    account_id: UUID
+    account_number: str
+    account_name: str
+    currency_code: str
+    date: date
+    opening_balance: Decimal
+    corrections_amount: Decimal
+    turnover_in: Decimal
+    turnover_out: Decimal
+    current_position: Decimal
+    limit: Decimal | None
+    limit_exceeded: bool

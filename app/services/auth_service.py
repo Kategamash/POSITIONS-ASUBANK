@@ -30,8 +30,8 @@ def decode_token(token: str) -> dict:
     return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
 
 
-def authenticate_user(db: Session, логин: str, пароль: str) -> Optional[User]:
-    user = db.query(User).filter(User.логин == логин, User.активен == True).first()
-    if not user or not verify_password(пароль, user.хэш_пароля):
+def authenticate_user(db: Session, login: str, password: str) -> Optional[User]:
+    user = db.query(User).filter(User.login == login, User.is_active == True).first()
+    if not user or not verify_password(password, user.password_hash):
         return None
     return user

@@ -14,50 +14,50 @@ from app.schemas.position import CurrentPositionRead
 
 
 def get_or_create_opening_balance(
-    db: Session, id_счета: UUID, дата: date
+    db: Session, account_id: UUID, date: date
 ) -> OpeningBalance:
     ob = (
         db.query(OpeningBalance)
-        .filter(OpeningBalance.id_счета == id_счета, OpeningBalance.дата == дата)
+        .filter(OpeningBalance.account_id == account_id, OpeningBalance.date == date)
         .first()
     )
     if not ob:
-        ob = OpeningBalance(id_счета=id_счета, дата=дата, сумма=Decimal("0"))
+        ob = OpeningBalance(account_id=account_id, date=date, amount=Decimal("0"))
         db.add(ob)
         db.flush()
     return ob
 
 
 def calculate_current_position(
-    db: Session, id_счета: UUID, дата: date
+    db: Session, account_id: UUID, date: date
 ) -> Optional[CurrentPositionRead]:
-    account = db.query(Account).filter(Account.id == id_счета).first()
+    account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         return None
 
     ob = (
         db.query(OpeningBalance)
-        .filter(OpeningBalance.id_счета == id_счета, OpeningBalance.дата == дата)
+        .filter(OpeningBalance.account_id == account_id, OpeningBalance.date == date)
         .first()
     )
-    opening = ob.сумма if ob else Decimal("0")
-    corrections = ob.сумма_корректировок if ob else Decimal("0")
+    opening = ob.amount if ob else Decimal("0")
+    corrections = ob.corrections_amount if ob else Decimal("0")
 
     turnover_in = (
-        db.query(func.coalesce(func.sum(Payment.сумма), 0))
+        db.query(func.coalesce(func.sum(Payment.amount), 0))
         .filter(
-            Payment.id_счета == id_счета,
-            Payment.дата_валютирования == дата,
-            Payment.направление == DIRECTION_IN,
+            Payment.account_id == account_id,
+            Payment.value_date == date,
+            Payment.direction == DIRECTION_IN,
         )
         .scalar()
     )
     turnover_out = (
-        db.query(func.coalesce(func.sum(Payment.сумма), 0))
+        db.query(func.coalesce(func.sum(Payment.amount), 0))
         .filter(
-            Payment.id_счета == id_счета,
-            Payment.дата_валютирования == дата,
-            Payment.направление == DIRECTION_OUT,
+            Payment.account_id == account_id,
+            Payment.value_date == date,
+            Payment.direction == DIRECTION_OUT,
         )
         .scalar()
     )
@@ -66,49 +66,49 @@ def calculate_current_position(
     turnover_out = Decimal(str(turnover_out))
     current = opening + corrections + turnover_in - turnover_out
 
-    limit = account.лимит
+    limit = account.limit
     exceeded = limit is not None and current < limit
 
     return CurrentPositionRead(
-        id_счета=account.id,
-        номер_счета=account.номер_счета,
-        наименование_счета=account.наименование,
-        код_валюты=account.код_валюты,
-        дата=дата,
-        входящий_остаток=opening,
-        сумма_корректировок=corrections,
-        оборот_in=turnover_in,
-        оборот_out=turnover_out,
-        текущая_позиция=current,
-        лимит=limit,
-        превышение_лимита=exceeded,
+        account_id=account.id,
+        account_number=account.account_number,
+        account_name=account.name,
+        currency_code=account.currency_code,
+        date=date,
+        opening_balance=opening,
+        corrections_amount=corrections,
+        turnover_in=turnover_in,
+        turnover_out=turnover_out,
+        current_position=current,
+        limit=limit,
+        limit_exceeded=exceeded,
     )
 
 
 def process_incoming_payment(db: Session, payment: Payment) -> dict:
     """
-    Обрабатывает входящий платёж:
-    1. Получает/создаёт входящий остаток для даты валютирования.
-    2. Создаёт запись Позиция.
-    3. Проверяет лимит — возвращает уведомление если превышен.
+    Process incoming payment:
+    1. Get/create opening balance for value date.
+    2. Create position record.
+    3. Check limit — return notification if exceeded.
     """
-    ob = get_or_create_opening_balance(db, payment.id_счета, payment.дата_валютирования)
+    ob = get_or_create_opening_balance(db, payment.account_id, payment.value_date)
 
-    position = calculate_current_position(db, payment.id_счета, payment.дата_валютирования)
-    current_sum = position.текущая_позиция if position else Decimal("0")
+    position = calculate_current_position(db, payment.account_id, payment.value_date)
+    current_sum = position.current_position if position else Decimal("0")
 
     pos = Position(
-        id_платежа=payment.id,
-        id_входящего_остатка=ob.id,
-        дата=payment.дата_валютирования,
-        сумма=current_sum,
+        payment_id=payment.id,
+        opening_balance_id=ob.id,
+        date=payment.value_date,
+        amount=current_sum,
     )
     db.add(pos)
     db.flush()
 
-    limit_exceeded = position.превышение_лимита if position else False
+    limit_exceeded = position.limit_exceeded if position else False
     return {
-        "позиция_id": str(pos.id),
-        "текущая_позиция": float(current_sum),
-        "превышение_лимита": limit_exceeded,
+        "position_id": str(pos.id),
+        "current_position": float(current_sum),
+        "limit_exceeded": limit_exceeded,
     }

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Numeric, String, ForeignKey, Text
+from sqlalchemy import Column, Numeric, ForeignKey, Text
 from sqlalchemy import TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -8,18 +8,16 @@ from app.database import Base
 
 
 class Correction(Base):
-    __tablename__ = "корректировки"
+    __tablename__ = "corrections"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    id_входящего_остатка = Column(
-        UUID(as_uuid=True), ForeignKey("входящий_остаток.id"), nullable=False
+    opening_balance_id = Column(
+        UUID(as_uuid=True), ForeignKey("opening_balances.id"), nullable=False
     )
-    пользователь_id = Column(
-        UUID(as_uuid=True), ForeignKey("пользователи.id"), nullable=False
-    )
-    сумма = Column(Numeric(20, 2), nullable=False)
-    комментарий = Column(Text, nullable=True)
-    дата_время = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    amount = Column(Numeric(20, 2), nullable=False)
+    comment = Column(Text, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
-    входящий_остаток = relationship("OpeningBalance", back_populates="корректировки")
-    пользователь = relationship("User")
+    opening_balance = relationship("OpeningBalance", back_populates="corrections")
+    user = relationship("User")

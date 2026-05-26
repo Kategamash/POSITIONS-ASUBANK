@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import CurrentUser, require_positioner_or_admin
+from app.dependencies import CurrentUser
 from app.models.account import Account
 from app.models.currency import Currency
 from app.models.payment import Payment
@@ -18,16 +18,16 @@ router = APIRouter(prefix="/payments", tags=["Платежи"])
 @router.get("/", response_model=list[PaymentRead], summary="Список платежей")
 def list_payments(
     current_user: CurrentUser,
-    id_счета: UUID | None = None,
-    дата_валютирования: date | None = None,
+    account_id: UUID | None = None,
+    value_date: date | None = None,
     db: Session = Depends(get_db),
 ):
     q = db.query(Payment)
-    if id_счета:
-        q = q.filter(Payment.id_счета == id_счета)
-    if дата_валютирования:
-        q = q.filter(Payment.дата_валютирования == дата_валютирования)
-    return q.order_by(Payment.дата_обработки.desc()).all()
+    if account_id:
+        q = q.filter(Payment.account_id == account_id)
+    if value_date:
+        q = q.filter(Payment.value_date == value_date)
+    return q.order_by(Payment.processing_date.desc()).all()
 
 
 @router.get("/{payment_id}", response_model=PaymentRead, summary="Платёж по ID")
@@ -48,21 +48,21 @@ def receive_payment_from_fx(body: IncomingPaymentFromFX, db: Session = Depends(g
     Эндпоинт вызывается системой FX-АСУБАНК при создании/подтверждении сделки.
     Принимает платёж, создаёт запись и пересчитывает позицию.
     """
-    if not db.query(Account).filter(Account.id == body.id_счета).first():
+    if not db.query(Account).filter(Account.id == body.account_id).first():
         raise HTTPException(status_code=400, detail="Счёт не найден")
-    if not db.query(Currency).filter(Currency.код == body.код_валюты.upper()).first():
+    if not db.query(Currency).filter(Currency.code == body.currency_code.upper()).first():
         raise HTTPException(status_code=400, detail="Валюта не найдена")
-    if body.направление not in ("IN", "OUT"):
+    if body.direction not in ("IN", "OUT"):
         raise HTTPException(status_code=400, detail="Направление должно быть IN или OUT")
 
     payment = Payment(
-        id_сделки_fx=body.id_сделки,
-        код_валюты=body.код_валюты.upper(),
-        сумма=body.сумма,
-        дата_валютирования=body.дата_валютирования,
-        id_счета=body.id_счета,
-        направление=body.направление,
-        дата_обработки=date.today(),
+        fx_deal_id=body.deal_id,
+        currency_code=body.currency_code.upper(),
+        amount=body.amount,
+        value_date=body.value_date,
+        account_id=body.account_id,
+        direction=body.direction,
+        processing_date=date.today(),
     )
     db.add(payment)
     db.flush()
@@ -71,7 +71,7 @@ def receive_payment_from_fx(body: IncomingPaymentFromFX, db: Session = Depends(g
     db.commit()
 
     return {
-        "статус": "принято",
-        "платеж_id": str(payment.id),
+        "status": "accepted",
+        "payment_id": str(payment.id),
         **result,
     }

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 from sqlalchemy.orm import Session
@@ -29,7 +29,7 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = db.query(User).filter(User.id == user_id, User.активен == True).first()
+    user = db.query(User).filter(User.id == user_id, User.is_active == True).first()
     if user is None:
         raise credentials_exception
     return user
@@ -40,7 +40,7 @@ CurrentUser = Annotated[User, Depends(get_current_user)]
 
 def require_role(*roles: str):
     def checker(user: CurrentUser):
-        if user.роль not in roles:
+        if user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Доступ запрещён. Требуется роль: {', '.join(roles)}",
@@ -50,7 +50,7 @@ def require_role(*roles: str):
 
 
 def require_positioner_or_admin(user: CurrentUser):
-    if user.роль not in (ROLE_POSITIONER, ROLE_ADMIN):
+    if user.role not in (ROLE_POSITIONER, ROLE_ADMIN):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ запрещён. Требуется роль: Позиционер или Администратор",
@@ -59,7 +59,7 @@ def require_positioner_or_admin(user: CurrentUser):
 
 
 def require_admin(user: CurrentUser):
-    if user.роль != ROLE_ADMIN:
+    if user.role != ROLE_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ запрещён. Требуется роль: Администратор",

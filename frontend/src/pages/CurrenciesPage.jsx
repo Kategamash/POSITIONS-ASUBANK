@@ -36,9 +36,9 @@ export default function CurrenciesPage() {
     setSaving(true)
     try {
       await createCurrency({
-        код: values.код.toUpperCase(),
-        наименование: values.наименование,
-        знаков_после_запятой: values.знаков_после_запятой ?? 2,
+        code: values.code.toUpperCase(),
+        name: values.name,
+        decimal_places: values.decimal_places ?? 2,
       })
       message.success('Валюта добавлена')
       setModalOpen(false)
@@ -51,10 +51,10 @@ export default function CurrenciesPage() {
     }
   }
 
-  const onDelete = async (код) => {
+  const onDelete = async (code) => {
     try {
-      await deleteCurrency(код)
-      message.success(`Валюта ${код} удалена`)
+      await deleteCurrency(code)
+      message.success(`Валюта ${code} удалена`)
       load()
     } catch (err) {
       message.error(err.response?.data?.detail || 'Ошибка удаления')
@@ -64,20 +64,20 @@ export default function CurrenciesPage() {
   const columns = [
     {
       title: 'Код',
-      dataIndex: 'код',
-      key: 'код',
+      dataIndex: 'code',
+      key: 'code',
       width: 100,
       render: (v) => <Tag color="blue" style={{ fontSize: 14, padding: '2px 10px' }}>{v}</Tag>,
     },
     {
       title: 'Наименование',
-      dataIndex: 'наименование',
-      key: 'наименование',
+      dataIndex: 'name',
+      key: 'name',
     },
     {
       title: 'Знаков после запятой',
-      dataIndex: 'знаков_после_запятой',
-      key: 'знаков_после_запятой',
+      dataIndex: 'decimal_places',
+      key: 'decimal_places',
       width: 180,
       align: 'center',
     },
@@ -90,8 +90,8 @@ export default function CurrenciesPage() {
             align: 'center',
             render: (_, record) => (
               <Popconfirm
-                title={`Удалить валюту ${record.код}?`}
-                onConfirm={() => onDelete(record.код)}
+                title={`Удалить валюту ${record.code}?`}
+                onConfirm={() => onDelete(record.code)}
                 okText="Удалить"
                 cancelText="Отмена"
                 okButtonProps={{ danger: true }}
@@ -127,7 +127,7 @@ export default function CurrenciesPage() {
         }
       >
         <Table
-          rowKey="код"
+          rowKey="code"
           dataSource={data}
           columns={columns}
           loading={loading}
@@ -149,7 +149,7 @@ export default function CurrenciesPage() {
       >
         <Form form={form} onFinish={onSave} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
-            name="код"
+            name="code"
             label="Код валюты (ISO 4217)"
             rules={[
               { required: true, message: 'Укажите код' },
@@ -159,14 +159,14 @@ export default function CurrenciesPage() {
             <Input placeholder="USD" maxLength={3} style={{ textTransform: 'uppercase' }} />
           </Form.Item>
           <Form.Item
-            name="наименование"
+            name="name"
             label="Наименование"
             rules={[{ required: true, message: 'Укажите наименование' }]}
           >
             <Input placeholder="Доллар США" />
           </Form.Item>
           <Form.Item
-            name="знаков_после_запятой"
+            name="decimal_places"
             label="Знаков после запятой"
             initialValue={2}
           >

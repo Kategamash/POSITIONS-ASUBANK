@@ -6,15 +6,15 @@ from app.database import Base
 
 
 class Position(Base):
-    __tablename__ = "позиция"
+    __tablename__ = "positions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    id_платежа = Column(UUID(as_uuid=True), ForeignKey("платежи.id"), nullable=False)
-    id_входящего_остатка = Column(
-        UUID(as_uuid=True), ForeignKey("входящий_остаток.id"), nullable=False
+    payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id"), nullable=False)
+    opening_balance_id = Column(
+        UUID(as_uuid=True), ForeignKey("opening_balances.id"), nullable=False
     )
-    дата = Column(Date, nullable=False)
-    сумма = Column(Numeric(20, 2), nullable=False)
+    date = Column(Date, nullable=False)
+    amount = Column(Numeric(20, 2), nullable=False)
 
-    платеж = relationship("Payment", back_populates="позиции")
-    входящий_остаток = relationship("OpeningBalance", back_populates="позиции")
+    payment = relationship("Payment", back_populates="positions")
+    opening_balance = relationship("OpeningBalance", back_populates="positions")

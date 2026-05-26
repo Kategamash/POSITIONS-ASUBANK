@@ -23,8 +23,8 @@ export default function PositionsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const params = { дата: date.format('YYYY-MM-DD') }
-      if (currencyFilter) params.код_валюты = currencyFilter
+      const params = { date: date.format('YYYY-MM-DD') }
+      if (currencyFilter) params.currency_code = currencyFilter
       setData(await getPositions(params))
     } catch {
       setData([])
@@ -41,42 +41,42 @@ export default function PositionsPage() {
     load()
   }, [date, currencyFilter])
 
-  const exceededCount = data.filter((d) => d.превышение_лимита).length
+  const exceededCount = data.filter((d) => d.limit_exceeded).length
 
   const columns = [
     {
       title: 'Номер счёта',
-      dataIndex: 'номер_счета',
-      key: 'номер_счета',
+      dataIndex: 'account_number',
+      key: 'account_number',
       fixed: 'left',
       width: 180,
       render: (v) => <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{v}</span>,
     },
     {
       title: 'Наименование',
-      dataIndex: 'наименование_счета',
-      key: 'наименование_счета',
+      dataIndex: 'account_name',
+      key: 'account_name',
       ellipsis: true,
     },
     {
       title: 'Валюта',
-      dataIndex: 'код_валюты',
-      key: 'код_валюты',
+      dataIndex: 'currency_code',
+      key: 'currency_code',
       width: 80,
       align: 'center',
       render: (v) => <Tag color="blue">{v}</Tag>,
     },
     {
       title: 'Вх. остаток',
-      dataIndex: 'входящий_остаток',
-      key: 'входящий_остаток',
+      dataIndex: 'opening_balance',
+      key: 'opening_balance',
       align: 'right',
       render: (v) => formatAmount(v),
     },
     {
       title: 'Корректировки',
-      dataIndex: 'сумма_корректировок',
-      key: 'сумма_корректировок',
+      dataIndex: 'corrections_amount',
+      key: 'corrections_amount',
       align: 'right',
       render: (v) => {
         const n = Number(v)
@@ -87,22 +87,22 @@ export default function PositionsPage() {
     },
     {
       title: 'Оборот IN',
-      dataIndex: 'оборот_in',
-      key: 'оборот_in',
+      dataIndex: 'turnover_in',
+      key: 'turnover_in',
       align: 'right',
       render: (v) => <span style={{ color: '#3f8600' }}>{formatAmount(v)}</span>,
     },
     {
       title: 'Оборот OUT',
-      dataIndex: 'оборот_out',
-      key: 'оборот_out',
+      dataIndex: 'turnover_out',
+      key: 'turnover_out',
       align: 'right',
       render: (v) => <span style={{ color: '#cf1322' }}>{formatAmount(v)}</span>,
     },
     {
       title: 'Тек. позиция',
-      dataIndex: 'текущая_позиция',
-      key: 'текущая_позиция',
+      dataIndex: 'current_position',
+      key: 'current_position',
       align: 'right',
       fixed: 'right',
       width: 160,
@@ -112,12 +112,12 @@ export default function PositionsPage() {
             style={{
               fontWeight: 700,
               fontSize: 14,
-              color: row.превышение_лимита ? '#cf1322' : '#1677ff',
+              color: row.limit_exceeded ? '#cf1322' : '#1677ff',
             }}
           >
             {formatAmount(v)}
           </span>
-          {row.превышение_лимита && (
+          {row.limit_exceeded && (
             <Tooltip title="Превышение лимита">
               <ExclamationCircleOutlined style={{ color: '#cf1322' }} />
             </Tooltip>
@@ -127,8 +127,8 @@ export default function PositionsPage() {
     },
     {
       title: 'Лимит',
-      dataIndex: 'лимит',
-      key: 'лимит',
+      dataIndex: 'limit',
+      key: 'limit',
       align: 'right',
       width: 130,
       render: (v) =>
@@ -192,19 +192,19 @@ export default function PositionsPage() {
               allowClear
               style={{ width: 120 }}
               onChange={setCurrencyFilter}
-              options={currencies.map((c) => ({ value: c.код, label: c.код }))}
+              options={currencies.map((c) => ({ value: c.code, label: c.code }))}
             />
           </Space>
         }
       >
         <Table
-          rowKey="id_счета"
+          rowKey="account_id"
           dataSource={data}
           columns={columns}
           loading={loading}
           scroll={{ x: 'max-content' }}
           rowClassName={(r) =>
-            r.превышение_лимита ? 'ant-table-row-selected' : ''
+            r.limit_exceeded ? 'ant-table-row-selected' : ''
           }
           pagination={false}
           bordered

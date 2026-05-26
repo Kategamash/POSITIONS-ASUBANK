@@ -22,17 +22,17 @@ router = APIRouter(prefix="/positions", tags=["Мониторинг позици
 )
 def get_all_positions(
     current_user: CurrentUser,
-    дата: date = Query(default_factory=date.today),
-    код_валюты: str | None = None,
+    date: date = Query(default_factory=date.today),
+    currency_code: str | None = None,
     db: Session = Depends(get_db),
 ):
-    query = db.query(Account).filter(Account.активен == True)
-    if код_валюты:
-        query = query.filter(Account.код_валюты == код_валюты.upper())
+    query = db.query(Account).filter(Account.is_active == True)
+    if currency_code:
+        query = query.filter(Account.currency_code == currency_code.upper())
 
     result = []
     for account in query.all():
-        pos = calculate_current_position(db, account.id, дата)
+        pos = calculate_current_position(db, account.id, date)
         if pos:
             result.append(pos)
     return result
@@ -46,13 +46,13 @@ def get_all_positions(
 def get_position(
     account_id: UUID,
     current_user: CurrentUser,
-    дата: date = Query(default_factory=date.today),
+    date: date = Query(default_factory=date.today),
     db: Session = Depends(get_db),
 ):
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="Счёт не найден")
-    pos = calculate_current_position(db, account_id, дата)
+    pos = calculate_current_position(db, account_id, date)
     if not pos:
         raise HTTPException(status_code=404, detail="Позиция не найдена")
     return pos
@@ -65,16 +65,16 @@ def get_position(
 )
 def list_opening_balances(
     current_user: CurrentUser,
-    дата: date | None = None,
-    id_счета: UUID | None = None,
+    date: date | None = None,
+    account_id: UUID | None = None,
     db: Session = Depends(get_db),
 ):
     q = db.query(OpeningBalance)
-    if дата:
-        q = q.filter(OpeningBalance.дата == дата)
-    if id_счета:
-        q = q.filter(OpeningBalance.id_счета == id_счета)
-    return q.order_by(OpeningBalance.дата.desc()).all()
+    if date:
+        q = q.filter(OpeningBalance.date == date)
+    if account_id:
+        q = q.filter(OpeningBalance.account_id == account_id)
+    return q.order_by(OpeningBalance.date.desc()).all()
 
 
 @router.post(
@@ -91,14 +91,14 @@ def create_opening_balance(
     from app.dependencies import require_positioner_or_admin
     require_positioner_or_admin(current_user)
 
-    if not db.query(Account).filter(Account.id == body.id_счета).first():
+    if not db.query(Account).filter(Account.id == body.account_id).first():
         raise HTTPException(status_code=400, detail="Счёт не найден")
 
     existing = (
         db.query(OpeningBalance)
         .filter(
-            OpeningBalance.id_счета == body.id_счета,
-            OpeningBalance.дата == body.дата,
+            OpeningBalance.account_id == body.account_id,
+            OpeningBalance.date == body.date,
         )
         .first()
     )
@@ -108,7 +108,7 @@ def create_opening_balance(
             detail="Входящий остаток на эту дату уже существует. Используйте корректировку.",
         )
 
-    ob = OpeningBalance(id_счета=body.id_счета, дата=body.дата, сумма=body.сумма)
+    ob = OpeningBalance(account_id=body.account_id, date=body.date, amount=body.amount)
     db.add(ob)
     db.commit()
     db.refresh(ob)

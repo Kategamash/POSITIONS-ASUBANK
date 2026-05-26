@@ -88,7 +88,7 @@ export default function AppLayout() {
       : []),
   ]
 
-  const role = user?.роль
+  const role = user?.role
   const roleMeta = ROLE_META[role] || { label: role, color: 'default' }
 
   return (
@@ -147,7 +147,7 @@ export default function AppLayout() {
             style={{ background: '#1677ff' }}
           />
           <Text strong style={{ fontSize: 14 }}>
-            {user?.полное_имя}
+            {user?.full_name}
           </Text>
           <Tag color={roleMeta.color} style={{ margin: 0 }}>
             {roleMeta.label}

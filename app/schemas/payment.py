@@ -6,30 +6,30 @@ from pydantic import BaseModel
 
 
 class PaymentBase(BaseModel):
-    код_валюты: str
-    сумма: Decimal
-    дата_валютирования: date
-    id_счета: UUID
-    направление: str  # IN / OUT
-    дата_обработки: date
+    currency_code: str
+    amount: Decimal
+    value_date: date
+    account_id: UUID
+    direction: str  # IN / OUT
+    processing_date: date
 
 
 class PaymentCreate(PaymentBase):
-    id_сделки_fx: Optional[UUID] = None
+    fx_deal_id: Optional[UUID] = None
 
 
 class PaymentRead(PaymentBase):
     id: UUID
-    id_сделки_fx: Optional[UUID] = None
+    fx_deal_id: Optional[UUID] = None
 
     model_config = {"from_attributes": True}
 
 
 class IncomingPaymentFromFX(BaseModel):
-    """Схема входящего платежа от FX-АСУБАНК"""
-    id_сделки: UUID
-    код_валюты: str
-    сумма: Decimal
-    дата_валютирования: date
-    id_счета: UUID
-    направление: str  # IN / OUT
+    """Incoming payment schema from FX-ASUBANK"""
+    deal_id: UUID
+    currency_code: str
+    amount: Decimal
+    value_date: date
+    account_id: UUID
+    direction: str  # IN / OUT

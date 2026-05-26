@@ -7,14 +7,14 @@ from app.database import Base
 
 
 class AuditLog(Base):
-    __tablename__ = "журнал_аудита"
+    __tablename__ = "audit_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    пользователь_id = Column(UUID(as_uuid=True), ForeignKey("пользователи.id"), nullable=True)
-    логин = Column(String(50), nullable=True)
-    действие = Column(String(100), nullable=False)
-    сущность = Column(String(100), nullable=True)
-    сущность_id = Column(String(100), nullable=True)
-    детали = Column(JSONB, nullable=True)
-    ip_адрес = Column(String(50), nullable=True)
-    дата_время = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    login = Column(String(50), nullable=True)
+    action = Column(String(100), nullable=False)
+    entity = Column(String(100), nullable=True)
+    entity_id = Column(String(100), nullable=True)
+    details = Column(JSONB, nullable=True)
+    ip_address = Column(String(50), nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)

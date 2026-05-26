@@ -6,16 +6,16 @@ from app.database import Base
 
 
 class Account(Base):
-    __tablename__ = "счета"
+    __tablename__ = "accounts"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    номер_счета = Column(String(20), nullable=False, unique=True)
-    наименование = Column(String(200), nullable=False)
-    код_валюты = Column(String(3), ForeignKey("валюта.код"), nullable=False)
-    банк_корреспондент = Column(String(200), nullable=False)
-    лимит = Column(Numeric(20, 2), nullable=True)
-    активен = Column(Boolean, nullable=False, default=True)
+    account_number = Column(String(20), nullable=False, unique=True)
+    name = Column(String(200), nullable=False)
+    currency_code = Column(String(3), ForeignKey("currencies.code"), nullable=False)
+    correspondent_bank = Column(String(200), nullable=False)
+    limit = Column(Numeric(20, 2), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
 
-    валюта = relationship("Currency")
-    остатки = relationship("OpeningBalance", back_populates="счет")
-    платежи = relationship("Payment", back_populates="счет")
+    currency = relationship("Currency")
+    opening_balances = relationship("OpeningBalance", back_populates="account")
+    payments = relationship("Payment", back_populates="account")

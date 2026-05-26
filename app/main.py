@@ -40,12 +40,12 @@ app.include_router(integration.router)
 @app.get("/", tags=["Служебное"])
 def root():
     return {
-        "система": "ПОЗИЦИИ-АСУБАНК",
-        "версия": "1.0.0",
-        "документация": "/docs",
+        "system": "POSITIONS-ASUBANK",
+        "version": "1.0.0",
+        "documentation": "/docs",
     }
 
 
 @app.get("/health", tags=["Служебное"])
 def health():
-    return {"статус": "ok"}
+    return {"status": "ok"}

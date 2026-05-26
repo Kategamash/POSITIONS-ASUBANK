@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import CurrentUser, require_admin, require_positioner_or_admin
+from app.dependencies import CurrentUser, require_admin
 from app.models.account import Account
 from app.models.currency import Currency
 from app.schemas.account import AccountCreate, AccountRead, AccountUpdate
@@ -14,15 +14,15 @@ router = APIRouter(prefix="/accounts", tags=["Счета ностро"])
 @router.get("/", response_model=list[AccountRead], summary="Список счетов ностро")
 def list_accounts(
     current_user: CurrentUser,
-    активен: bool | None = None,
-    код_валюты: str | None = None,
+    is_active: bool | None = None,
+    currency_code: str | None = None,
     db: Session = Depends(get_db),
 ):
     q = db.query(Account)
-    if активен is not None:
-        q = q.filter(Account.активен == активен)
-    if код_валюты:
-        q = q.filter(Account.код_валюты == код_валюты.upper())
+    if is_active is not None:
+        q = q.filter(Account.is_active == is_active)
+    if currency_code:
+        q = q.filter(Account.currency_code == currency_code.upper())
     return q.all()
 
 
@@ -42,12 +42,12 @@ def get_account(account_id: UUID, current_user: CurrentUser, db: Session = Depen
     dependencies=[Depends(require_admin)],
 )
 def create_account(body: AccountCreate, db: Session = Depends(get_db)):
-    if not db.query(Currency).filter(Currency.код == body.код_валюты.upper()).first():
+    if not db.query(Currency).filter(Currency.code == body.currency_code.upper()).first():
         raise HTTPException(status_code=400, detail="Валюта не найдена")
-    if db.query(Account).filter(Account.номер_счета == body.номер_счета).first():
+    if db.query(Account).filter(Account.account_number == body.account_number).first():
         raise HTTPException(status_code=409, detail="Счёт с таким номером уже существует")
     account = Account(**body.model_dump())
-    account.код_валюты = body.код_валюты.upper()
+    account.currency_code = body.currency_code.upper()
     db.add(account)
     db.commit()
     db.refresh(account)

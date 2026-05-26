@@ -35,8 +35,8 @@ export default function AuditPage() {
     setLoading(true)
     try {
       const params = {}
-      if (filterLogin.trim()) params.логин = filterLogin.trim()
-      if (filterAction) params.действие = filterAction
+      if (filterLogin.trim()) params.login = filterLogin.trim()
+      if (filterAction) params.action = filterAction
       setData(await getAuditLog(params))
     } catch {
       setData([])
@@ -52,21 +52,21 @@ export default function AuditPage() {
   const columns = [
     {
       title: 'Дата / Время',
-      dataIndex: 'дата_время',
-      key: 'дата_время',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 170,
       render: formatDateTime,
     },
     {
       title: 'Логин',
-      dataIndex: 'логин',
-      key: 'логин',
+      dataIndex: 'login',
+      key: 'login',
       width: 130,
       render: (v) => <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{v || '—'}</span>,
     },
     {
       title: 'Действие',
-      dataIndex: 'действие',
+      dataIndex: 'action',
       key: 'действие',
       width: 170,
       render: (v) => (
@@ -75,14 +75,14 @@ export default function AuditPage() {
     },
     {
       title: 'Сущность',
-      dataIndex: 'сущность',
+      dataIndex: 'entity',
       key: 'сущность',
       width: 150,
       render: (v) => v || <Text type="secondary">—</Text>,
     },
     {
       title: 'Детали',
-      dataIndex: 'детали',
+      dataIndex: 'details',
       key: 'детали',
       ellipsis: true,
       render: (v) => {
@@ -96,7 +96,7 @@ export default function AuditPage() {
     },
     {
       title: 'IP',
-      dataIndex: 'ip_адрес',
+      dataIndex: 'ip_address',
       key: 'ip_адрес',
       width: 130,
       render: (v) =>

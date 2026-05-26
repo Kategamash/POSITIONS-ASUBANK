@@ -1,6 +1,6 @@
 """
-Скрипт заполнения базы данных начальными данными.
-Запуск: python seed.py
+Seed script for initial database data.
+Run: python seed.py
 """
 from datetime import date
 from app.database import SessionLocal, Base, engine
@@ -10,7 +10,6 @@ from app.models.user import User, ROLE_ADMIN, ROLE_POSITIONER, ROLE_TRADER
 from app.models.opening_balance import OpeningBalance
 from app.services.auth_service import hash_password
 
-# Импортируем все модели чтобы создались таблицы
 import app.models  # noqa
 
 
@@ -19,54 +18,52 @@ def seed():
     db = SessionLocal()
 
     try:
-        # --- Валюты ---
         currencies = [
-            Currency(код="USD", наименование="Доллар США", знаков_после_запятой=2),
-            Currency(код="EUR", наименование="Евро", знаков_после_запятой=2),
-            Currency(код="RUB", наименование="Российский рубль", знаков_после_запятой=2),
-            Currency(код="CNY", наименование="Китайский юань", знаков_после_запятой=2),
-            Currency(код="GBP", наименование="Британский фунт", знаков_после_запятой=2),
+            Currency(code="USD", name="Доллар США", decimal_places=2),
+            Currency(code="EUR", name="Евро", decimal_places=2),
+            Currency(code="RUB", name="Российский рубль", decimal_places=2),
+            Currency(code="CNY", name="Китайский юань", decimal_places=2),
+            Currency(code="GBP", name="Британский фунт", decimal_places=2),
         ]
         for c in currencies:
-            if not db.query(Currency).filter(Currency.код == c.код).first():
+            if not db.query(Currency).filter(Currency.code == c.code).first():
                 db.add(c)
         db.flush()
         print("✓ Валюты добавлены")
 
-        # --- Счета ностро ---
         accounts_data = [
             dict(
-                номер_счета="30111840000000001001",
-                наименование="Ностро USD в Citibank",
-                код_валюты="USD",
-                банк_корреспондент="Citibank N.A., New York",
-                лимит=500000,
+                account_number="30111840000000001001",
+                name="Ностро USD в Citibank",
+                currency_code="USD",
+                correspondent_bank="Citibank N.A., New York",
+                limit=500000,
             ),
             dict(
-                номер_счета="30111978000000001002",
-                наименование="Ностро EUR в Deutsche Bank",
-                код_валюты="EUR",
-                банк_корреспондент="Deutsche Bank AG, Frankfurt",
-                лимит=300000,
+                account_number="30111978000000001002",
+                name="Ностро EUR в Deutsche Bank",
+                currency_code="EUR",
+                correspondent_bank="Deutsche Bank AG, Frankfurt",
+                limit=300000,
             ),
             dict(
-                номер_счета="30111156000000001003",
-                наименование="Ностро CNY в Bank of China",
-                код_валюты="CNY",
-                банк_корреспондент="Bank of China, Beijing",
-                лимит=2000000,
+                account_number="30111156000000001003",
+                name="Ностро CNY в Bank of China",
+                currency_code="CNY",
+                correspondent_bank="Bank of China, Beijing",
+                limit=2000000,
             ),
             dict(
-                номер_счета="30111826000000001004",
-                наименование="Ностро GBP в Barclays",
-                код_валюты="GBP",
-                банк_корреспондент="Barclays Bank PLC, London",
-                лимит=200000,
+                account_number="30111826000000001004",
+                name="Ностро GBP в Barclays",
+                currency_code="GBP",
+                correspondent_bank="Barclays Bank PLC, London",
+                limit=200000,
             ),
         ]
         created_accounts = []
         for a in accounts_data:
-            existing = db.query(Account).filter(Account.номер_счета == a["номер_счета"]).first()
+            existing = db.query(Account).filter(Account.account_number == a["account_number"]).first()
             if not existing:
                 acc = Account(**a)
                 db.add(acc)
@@ -76,7 +73,6 @@ def seed():
                 created_accounts.append(existing)
         print("✓ Счета ностро добавлены")
 
-        # --- Входящие остатки на сегодня ---
         today = date.today()
         opening_balances = [
             (created_accounts[0], 1_200_000.00),
@@ -84,30 +80,29 @@ def seed():
             (created_accounts[2], 5_000_000.00),
             (created_accounts[3], 400_000.00),
         ]
-        for acc, сумма in opening_balances:
+        for acc, amount in opening_balances:
             existing = db.query(OpeningBalance).filter(
-                OpeningBalance.id_счета == acc.id,
-                OpeningBalance.дата == today,
+                OpeningBalance.account_id == acc.id,
+                OpeningBalance.date == today,
             ).first()
             if not existing:
-                db.add(OpeningBalance(id_счета=acc.id, дата=today, сумма=сумма))
+                db.add(OpeningBalance(account_id=acc.id, date=today, amount=amount))
         print("✓ Входящие остатки на сегодня добавлены")
 
-        # --- Пользователи ---
         users_data = [
-            dict(логин="admin", пароль="Admin@123", полное_имя="Главный Администратор", роль=ROLE_ADMIN),
-            dict(логин="positioner01", пароль="Pos@123", полное_имя="Иванов Иван Иванович", роль=ROLE_POSITIONER),
-            dict(логин="positioner02", пароль="Pos@123", полное_имя="Петрова Анна Сергеевна", роль=ROLE_POSITIONER),
-            dict(логин="trader01", пароль="Trader@123", полное_имя="Сидоров Алексей Петрович", роль=ROLE_TRADER),
-            dict(логин="trader02", пароль="Trader@123", полное_имя="Козлова Мария Дмитриевна", роль=ROLE_TRADER),
+            dict(login="admin", password="Admin@123", full_name="Главный Администратор", role=ROLE_ADMIN),
+            dict(login="positioner01", password="Pos@123", full_name="Иванов Иван Иванович", role=ROLE_POSITIONER),
+            dict(login="positioner02", password="Pos@123", full_name="Петрова Анна Сергеевна", role=ROLE_POSITIONER),
+            dict(login="trader01", password="Trader@123", full_name="Сидоров Алексей Петрович", role=ROLE_TRADER),
+            dict(login="trader02", password="Trader@123", full_name="Козлова Мария Дмитриевна", role=ROLE_TRADER),
         ]
         for u in users_data:
-            if not db.query(User).filter(User.логин == u["логин"]).first():
+            if not db.query(User).filter(User.login == u["login"]).first():
                 db.add(User(
-                    логин=u["логин"],
-                    хэш_пароля=hash_password(u["пароль"]),
-                    полное_имя=u["полное_имя"],
-                    роль=u["роль"],
+                    login=u["login"],
+                    password_hash=hash_password(u["password"]),
+                    full_name=u["full_name"],
+                    role=u["role"],
                 ))
         print("✓ Пользователи добавлены")
 

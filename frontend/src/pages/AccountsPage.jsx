@@ -27,8 +27,8 @@ export default function AccountsPage() {
     setLoading(true)
     try {
       const params = {}
-      if (filterActive !== null) params.активен = filterActive
-      if (filterCurrency) params.код_валюты = filterCurrency
+      if (filterActive !== null) params.is_active = filterActive
+      if (filterCurrency) params.currency_code = filterCurrency
       setData(await getAccounts(params))
     } catch {
       message.error('Ошибка загрузки счетов')
@@ -54,10 +54,10 @@ export default function AccountsPage() {
   const openEdit = (record) => {
     setEditRecord(record)
     form.setFieldsValue({
-      наименование: record.наименование,
-      банк_корреспондент: record.банк_корреспондент,
-      лимит: record.лимит != null ? Number(record.лимит) : null,
-      активен: record.активен,
+      name: record.name,
+      correspondent_bank: record.correspondent_bank,
+      limit: record.limit != null ? Number(record.limit) : null,
+      is_active: record.is_active,
     })
     setModalOpen(true)
   }
@@ -67,20 +67,20 @@ export default function AccountsPage() {
     try {
       if (editRecord) {
         await updateAccount(editRecord.id, {
-          наименование: values.наименование,
-          банк_корреспондент: values.банк_корреспондент,
-          лимит: values.лимит ?? null,
-          активен: values.активен,
+          name: values.name,
+          correspondent_bank: values.correspondent_bank,
+          limit: values.limit ?? null,
+          is_active: values.is_active,
         })
         message.success('Счёт обновлён')
       } else {
         await createAccount({
-          номер_счета: values.номер_счета,
-          наименование: values.наименование,
-          код_валюты: values.код_валюты,
-          банк_корреспондент: values.банк_корреспондент,
-          лимит: values.лимит ?? null,
-          активен: true,
+          account_number: values.account_number,
+          name: values.name,
+          currency_code: values.currency_code,
+          correspondent_bank: values.correspondent_bank,
+          limit: values.limit ?? null,
+          is_active: true,
         })
         message.success('Счёт создан')
       }
@@ -96,41 +96,41 @@ export default function AccountsPage() {
   const columns = [
     {
       title: 'Номер счёта',
-      dataIndex: 'номер_счета',
-      key: 'номер_счета',
+      dataIndex: 'account_number',
+      key: 'account_number',
       render: (v) => <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{v}</span>,
     },
     {
       title: 'Наименование',
-      dataIndex: 'наименование',
-      key: 'наименование',
+      dataIndex: 'name',
+      key: 'name',
       ellipsis: true,
     },
     {
       title: 'Валюта',
-      dataIndex: 'код_валюты',
-      key: 'код_валюты',
+      dataIndex: 'currency_code',
+      key: 'currency_code',
       width: 80,
       align: 'center',
       render: (v) => <Tag color="blue">{v}</Tag>,
     },
     {
       title: 'Банк-корреспондент',
-      dataIndex: 'банк_корреспондент',
-      key: 'банк_корреспондент',
+      dataIndex: 'correspondent_bank',
+      key: 'correspondent_bank',
       ellipsis: true,
     },
     {
       title: 'Лимит',
-      dataIndex: 'лимит',
-      key: 'лимит',
+      dataIndex: 'limit',
+      key: 'limit',
       align: 'right',
       render: (v) => (v != null ? formatAmount(v) : <Tag>Без лимита</Tag>),
     },
     {
       title: 'Статус',
-      dataIndex: 'активен',
-      key: 'активен',
+      dataIndex: 'is_active',
+      key: 'is_active',
       width: 100,
       align: 'center',
       render: (v) =>
@@ -176,7 +176,7 @@ export default function AccountsPage() {
               allowClear
               style={{ width: 120 }}
               onChange={setFilterCurrency}
-              options={currencies.map((c) => ({ value: c.код, label: c.код }))}
+              options={currencies.map((c) => ({ value: c.code, label: c.code }))}
             />
             <Select
               placeholder="Все статусы"
@@ -221,42 +221,42 @@ export default function AccountsPage() {
           {!editRecord && (
             <>
               <Form.Item
-                name="номер_счета"
+                name="account_number"
                 label="Номер счёта"
                 rules={[{ required: true, message: 'Укажите номер счёта' }]}
               >
                 <Input placeholder="NOSTRO.USD.001" />
               </Form.Item>
               <Form.Item
-                name="код_валюты"
+                name="currency_code"
                 label="Валюта"
                 rules={[{ required: true, message: 'Выберите валюту' }]}
               >
                 <Select
                   placeholder="Выберите валюту"
                   options={currencies.map((c) => ({
-                    value: c.код,
-                    label: `${c.код} — ${c.наименование}`,
+                    value: c.code,
+                    label: `${c.code} — ${c.name}`,
                   }))}
                 />
               </Form.Item>
             </>
           )}
           <Form.Item
-            name="наименование"
+            name="name"
             label="Наименование"
             rules={[{ required: true, message: 'Укажите наименование' }]}
           >
             <Input placeholder="Счёт ностро USD (Citibank)" />
           </Form.Item>
           <Form.Item
-            name="банк_корреспондент"
+            name="correspondent_bank"
             label="Банк-корреспондент"
             rules={[{ required: true, message: 'Укажите банк' }]}
           >
             <Input placeholder="Citibank N.A., New York" />
           </Form.Item>
-          <Form.Item name="лимит" label="Лимит (минимальная позиция)">
+          <Form.Item name="limit" label="Лимит (минимальная позиция)">
             <InputNumber
               style={{ width: '100%' }}
               placeholder="Не задан"
@@ -265,7 +265,7 @@ export default function AccountsPage() {
             />
           </Form.Item>
           {editRecord && (
-            <Form.Item name="активен" label="Статус" valuePropName="checked">
+            <Form.Item name="is_active" label="Статус" valuePropName="checked">
               <Switch checkedChildren="Активен" unCheckedChildren="Закрыт" />
             </Form.Item>
           )}

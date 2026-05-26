@@ -27,8 +27,8 @@ export default function PaymentsPage() {
     setLoading(true)
     try {
       const params = {}
-      if (filterAccount) params.id_счета = filterAccount
-      if (filterDate) params.дата_валютирования = filterDate.format('YYYY-MM-DD')
+      if (filterAccount) params.account_id = filterAccount
+      if (filterDate) params.value_date = filterDate.format('YYYY-MM-DD')
       setData(await getPayments(params))
     } catch {
       message.error('Ошибка загрузки платежей')
@@ -50,14 +50,14 @@ export default function PaymentsPage() {
     setSaving(true)
     try {
       const result = await sendIncomingPayment({
-        id_сделки: generateUUID(),
-        код_валюты: values.код_валюты,
-        сумма: values.сумма,
-        дата_валютирования: values.дата_валютирования.format('YYYY-MM-DD'),
-        id_счета: values.id_счета,
-        направление: values.направление,
+        deal_id: generateUUID(),
+        currency_code: values.currency_code,
+        amount: values.amount,
+        value_date: values.value_date.format('YYYY-MM-DD'),
+        account_id: values.account_id,
+        direction: values.direction,
       })
-      message.success(`Платёж принят. ID: ${result.платеж_id}`)
+      message.success(`Платёж принят. ID: ${result.payment_id}`)
       setModalOpen(false)
       form.resetFields()
       load()
@@ -73,28 +73,28 @@ export default function PaymentsPage() {
   const columns = [
     {
       title: 'Дата обработки',
-      dataIndex: 'дата_обработки',
-      key: 'дата_обработки',
+      dataIndex: 'processing_date',
+      key: 'processing_date',
       width: 130,
       render: formatDate,
     },
     {
       title: 'Дата валютирования',
-      dataIndex: 'дата_валютирования',
-      key: 'дата_валютирования',
+      dataIndex: 'value_date',
+      key: 'value_date',
       width: 150,
       render: formatDate,
     },
     {
       title: 'Счёт',
-      dataIndex: 'id_счета',
-      key: 'id_счета',
+      dataIndex: 'account_id',
+      key: 'account_id',
       render: (v) => {
         const acc = accountMap[v]
         return acc ? (
           <Space>
-            <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{acc.номер_счета}</span>
-            <Tag color="blue">{acc.код_валюты}</Tag>
+            <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{acc.account_number}</span>
+            <Tag color="blue">{acc.currency_code}</Tag>
           </Space>
         ) : (
           <span style={{ fontFamily: 'monospace', color: '#8c8c8c', fontSize: 12 }}>{v}</span>
@@ -103,23 +103,23 @@ export default function PaymentsPage() {
     },
     {
       title: 'Валюта',
-      dataIndex: 'код_валюты',
-      key: 'код_валюты',
+      dataIndex: 'currency_code',
+      key: 'currency_code',
       width: 80,
       align: 'center',
       render: (v) => <Tag color="blue">{v}</Tag>,
     },
     {
       title: 'Сумма',
-      dataIndex: 'сумма',
-      key: 'сумма',
+      dataIndex: 'amount',
+      key: 'amount',
       align: 'right',
       render: formatAmount,
     },
     {
       title: 'Направление',
-      dataIndex: 'направление',
-      key: 'направление',
+      dataIndex: 'direction',
+      key: 'direction',
       width: 110,
       align: 'center',
       render: (v) =>
@@ -131,8 +131,8 @@ export default function PaymentsPage() {
     },
     {
       title: 'ID сделки FX',
-      dataIndex: 'id_сделки_fx',
-      key: 'id_сделки_fx',
+      dataIndex: 'fx_deal_id',
+      key: 'fx_deal_id',
       ellipsis: true,
       render: (v) =>
         v ? (
@@ -159,7 +159,7 @@ export default function PaymentsPage() {
               onChange={setFilterAccount}
               options={accounts.map((a) => ({
                 value: a.id,
-                label: `${a.номер_счета} (${a.код_валюты})`,
+                label: `${a.account_number} (${a.currency_code})`,
               }))}
               showSearch
               filterOption={(input, opt) =>
@@ -177,7 +177,7 @@ export default function PaymentsPage() {
               icon={<SendOutlined />}
               onClick={() => {
                 form.resetFields()
-                form.setFieldValue('дата_валютирования', dayjs())
+                form.setFieldValue('value_date', dayjs())
                 setModalOpen(true)
               }}
             >
@@ -209,7 +209,7 @@ export default function PaymentsPage() {
       >
         <Form form={form} onFinish={onSend} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
-            name="id_счета"
+            name="account_id"
             label="Счёт ностро"
             rules={[{ required: true, message: 'Выберите счёт' }]}
           >
@@ -218,7 +218,7 @@ export default function PaymentsPage() {
               showSearch
               options={accounts.map((a) => ({
                 value: a.id,
-                label: `${a.номер_счета} — ${a.наименование} (${a.код_валюты})`,
+                label: `${a.account_number} — ${a.name} (${a.currency_code})`,
               }))}
               filterOption={(input, opt) =>
                 opt.label.toLowerCase().includes(input.toLowerCase())
@@ -226,20 +226,20 @@ export default function PaymentsPage() {
             />
           </Form.Item>
           <Form.Item
-            name="код_валюты"
+            name="currency_code"
             label="Валюта"
             rules={[{ required: true, message: 'Выберите валюту' }]}
           >
             <Select
               placeholder="Выберите валюту"
               options={currencies.map((c) => ({
-                value: c.код,
-                label: `${c.код} — ${c.наименование}`,
+                value: c.code,
+                label: `${c.code} — ${c.name}`,
               }))}
             />
           </Form.Item>
           <Form.Item
-            name="направление"
+            name="direction"
             label="Направление"
             rules={[{ required: true, message: 'Выберите направление' }]}
           >
@@ -251,7 +251,7 @@ export default function PaymentsPage() {
             />
           </Form.Item>
           <Form.Item
-            name="сумма"
+            name="amount"
             label="Сумма"
             rules={[{ required: true, message: 'Введите сумму' }]}
           >
@@ -264,7 +264,7 @@ export default function PaymentsPage() {
             />
           </Form.Item>
           <Form.Item
-            name="дата_валютирования"
+            name="value_date"
             label="Дата валютирования"
             rules={[{ required: true, message: 'Укажите дату' }]}
           >

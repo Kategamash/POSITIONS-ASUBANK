@@ -42,33 +42,33 @@ export default function IntegrationPage() {
   }
 
   const fxDealColumns = [
-    { title: 'Тип', dataIndex: 'тип', key: 'тип', width: 60, render: (v) => <Tag>{v}</Tag> },
+    { title: 'Тип', dataIndex: 'type', key: 'тип', width: 60, render: (v) => <Tag>{v}</Tag> },
     {
       title: 'Статус',
-      dataIndex: 'статус',
+      dataIndex: 'status',
       key: 'статус',
       width: 130,
       render: (v) => <Tag color="success">{v}</Tag>,
     },
-    { title: 'Валюта покупки', dataIndex: 'валюта_покупки', key: 'валюта_покупки', width: 130, render: (v) => <Tag color="blue">{v}</Tag> },
-    { title: 'Валюта продажи', dataIndex: 'валюта_продажи', key: 'валюта_продажи', width: 130, render: (v) => <Tag color="orange">{v}</Tag> },
-    { title: 'Сумма', dataIndex: 'сумма', key: 'сумма', align: 'right', render: formatAmount },
-    { title: 'Дата валютирования', dataIndex: 'дата_валютирования', key: 'дата_валютирования', render: formatDate },
-    { title: 'Трейдер', dataIndex: 'трейдер', key: 'трейдер', render: (v) => <span style={{ fontFamily: 'monospace' }}>{v}</span> },
+    { title: 'Валюта покупки', dataIndex: 'buy_currency', key: 'валюта_покупки', width: 130, render: (v) => <Tag color="blue">{v}</Tag> },
+    { title: 'Валюта продажи', dataIndex: 'sell_currency', key: 'валюта_продажи', width: 130, render: (v) => <Tag color="orange">{v}</Tag> },
+    { title: 'Сумма', dataIndex: 'amount', key: 'amount', align: 'right', render: formatAmount },
+    { title: 'Дата валютирования', dataIndex: 'value_date', key: 'value_date', render: formatDate },
+    { title: 'Трейдер', dataIndex: 'trader', key: 'трейдер', render: (v) => <span style={{ fontFamily: 'monospace' }}>{v}</span> },
   ]
 
   const reportColumns = [
     {
       title: 'Счёт',
-      dataIndex: 'счет',
+      dataIndex: 'account_number',
       key: 'счет',
       render: (v) => <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{v}</span>,
     },
-    { title: 'Валюта', dataIndex: 'валюта', key: 'валюта', width: 80, render: (v) => <Tag color="blue">{v}</Tag> },
-    { title: 'Вх. остаток', dataIndex: 'входящий_остаток', key: 'входящий_остаток', align: 'right', render: formatAmount },
+    { title: 'Валюта', dataIndex: 'currency_code', key: 'валюта', width: 80, render: (v) => <Tag color="blue">{v}</Tag> },
+    { title: 'Вх. остаток', dataIndex: 'opening_balance', key: 'opening_balance', align: 'right', render: formatAmount },
     {
       title: 'Корректировки',
-      dataIndex: 'корректировки',
+      dataIndex: 'corrections_amount',
       key: 'корректировки',
       align: 'right',
       render: (v) => {
@@ -78,12 +78,12 @@ export default function IntegrationPage() {
         return formatAmount(v)
       },
     },
-    { title: 'Оборот IN', dataIndex: 'оборот_in', key: 'оборот_in', align: 'right', render: (v) => <span style={{ color: '#3f8600' }}>{formatAmount(v)}</span> },
-    { title: 'Оборот OUT', dataIndex: 'оборот_out', key: 'оборот_out', align: 'right', render: (v) => <span style={{ color: '#cf1322' }}>{formatAmount(v)}</span> },
+    { title: 'Оборот IN', dataIndex: 'turnover_in', key: 'turnover_in', align: 'right', render: (v) => <span style={{ color: '#3f8600' }}>{formatAmount(v)}</span> },
+    { title: 'Оборот OUT', dataIndex: 'turnover_out', key: 'turnover_out', align: 'right', render: (v) => <span style={{ color: '#cf1322' }}>{formatAmount(v)}</span> },
     {
       title: 'Тек. позиция',
-      dataIndex: 'текущая_позиция',
-      key: 'текущая_позиция',
+      dataIndex: 'current_position',
+      key: 'current_position',
       align: 'right',
       render: (v) => <span style={{ fontWeight: 700, color: '#1677ff' }}>{formatAmount(v)}</span>,
     },
@@ -142,12 +142,12 @@ export default function IntegrationPage() {
             {fxDeals && (
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Descriptions size="small" bordered>
-                  <Descriptions.Item label="Источник">{fxDeals.источник}</Descriptions.Item>
-                  <Descriptions.Item label="Сделок">{fxDeals.сделки?.length || 0}</Descriptions.Item>
+                  <Descriptions.Item label="Источник">{fxDeals.source}</Descriptions.Item>
+                  <Descriptions.Item label="Сделок">{fxDeals.deals?.length || 0}</Descriptions.Item>
                 </Descriptions>
                 <Table
                   rowKey="id"
-                  dataSource={fxDeals.сделки}
+                  dataSource={fxDeals.deals}
                   columns={fxDealColumns}
                   pagination={false}
                   size="small"
@@ -200,13 +200,13 @@ export default function IntegrationPage() {
             {reportData && (
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Descriptions size="small" bordered>
-                  <Descriptions.Item label="Дата">{reportData.дата}</Descriptions.Item>
-                  <Descriptions.Item label="Счетов">{reportData.количество_счетов}</Descriptions.Item>
-                  <Descriptions.Item label="Источник">{reportData.источник}</Descriptions.Item>
+                  <Descriptions.Item label="Дата">{reportData.date}</Descriptions.Item>
+                  <Descriptions.Item label="Счетов">{reportData.account_count}</Descriptions.Item>
+                  <Descriptions.Item label="Источник">{reportData.source}</Descriptions.Item>
                 </Descriptions>
                 <Table
-                  rowKey="счет"
-                  dataSource={reportData.позиции}
+                  rowKey="account_number"
+                  dataSource={reportData.positions}
                   columns={reportColumns}
                   pagination={false}
                   size="small"
