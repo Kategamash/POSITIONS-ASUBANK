@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
   Table, DatePicker, Select, Space, Typography, Tag, Row, Col, Card,
-  Statistic, Badge, Tooltip, Spin,
+  Statistic, Tooltip, Grid,
 } from 'antd'
 import {
   ExclamationCircleOutlined, ArrowUpOutlined, CheckCircleOutlined,
@@ -12,8 +12,10 @@ import { getCurrencies } from '../api/currencies'
 import { formatAmount } from '../utils/format'
 
 const { Title } = Typography
+const { useBreakpoint } = Grid
 
 export default function PositionsPage() {
+  const screens = useBreakpoint()
   const [data, setData] = useState([])
   const [currencies, setCurrencies] = useState([])
   const [loading, setLoading] = useState(false)
@@ -23,7 +25,7 @@ export default function PositionsPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const params = { date: date.format('YYYY-MM-DD') }
+      const params: Record<string, any> = { date: date.format('YYYY-MM-DD') }
       if (currencyFilter) params.currency_code = currencyFilter
       setData(await getPositions(params))
     } catch {
@@ -42,6 +44,26 @@ export default function PositionsPage() {
   }, [date, currencyFilter])
 
   const exceededCount = data.filter((d) => d.limit_exceeded).length
+  const isCompact = !screens.sm
+
+  const filters = (
+    <Space wrap style={{ width: isCompact ? '100%' : undefined }}>
+      <DatePicker
+        value={date}
+        onChange={(d) => setDate(d || dayjs())}
+        format="DD.MM.YYYY"
+        allowClear={false}
+        style={{ width: isCompact ? '100%' : undefined }}
+      />
+      <Select
+        placeholder="Все валюты"
+        allowClear
+        style={{ width: isCompact ? '100%' : 120 }}
+        onChange={setCurrencyFilter}
+        options={currencies.map((c) => ({ value: c.code, label: c.code }))}
+      />
+    </Space>
+  )
 
   const columns = [
     {
@@ -150,13 +172,13 @@ export default function PositionsPage() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={8}>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={8}>
           <Card size="small">
             <Statistic title="Счетов отслеживается" value={data.length} />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={8}>
           <Card size="small">
             <Statistic
               title="Превышений лимита"
@@ -166,7 +188,7 @@ export default function PositionsPage() {
             />
           </Card>
         </Col>
-        <Col span={8}>
+        <Col xs={24} sm={8}>
           <Card size="small">
             <Statistic
               title="Дата расчёта"
@@ -179,28 +201,17 @@ export default function PositionsPage() {
 
       <Card
         title="Позиции по счетам"
-        extra={
-          <Space>
-            <DatePicker
-              value={date}
-              onChange={(d) => setDate(d || dayjs())}
-              format="DD.MM.YYYY"
-              allowClear={false}
-            />
-            <Select
-              placeholder="Все валюты"
-              allowClear
-              style={{ width: 120 }}
-              onChange={setCurrencyFilter}
-              options={currencies.map((c) => ({ value: c.code, label: c.code }))}
-            />
-          </Space>
-        }
+        extra={isCompact ? null : filters}
       >
+        {isCompact && (
+          <div style={{ marginBottom: 16 }}>
+            {filters}
+          </div>
+        )}
         <Table
           rowKey="account_id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           scroll={{ x: 'max-content' }}
           rowClassName={(r) =>

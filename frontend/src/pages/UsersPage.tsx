@@ -24,7 +24,7 @@ export default function UsersPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editRecord, setEditRecord] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<any>()
 
   const load = async () => {
     setLoading(true)
@@ -61,7 +61,7 @@ export default function UsersPage() {
     setSaving(true)
     try {
       if (editRecord) {
-        const payload = {}
+        const payload: Record<string, any> = {}
         if (values.full_name !== editRecord.full_name) payload.full_name = values.full_name
         if (values.role !== editRecord.role) payload.role = values.role
         if (values.is_active !== editRecord.is_active) payload.is_active = values.is_active
@@ -198,7 +198,7 @@ export default function UsersPage() {
         <Table
           rowKey="id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={{ pageSize: 20 }}
           bordered

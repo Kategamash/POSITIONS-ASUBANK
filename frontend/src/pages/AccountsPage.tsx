@@ -21,12 +21,12 @@ export default function AccountsPage() {
   const [saving, setSaving] = useState(false)
   const [filterActive, setFilterActive] = useState(null)
   const [filterCurrency, setFilterCurrency] = useState(null)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<any>()
 
   const load = async () => {
     setLoading(true)
     try {
-      const params = {}
+      const params: Record<string, any> = {}
       if (filterActive !== null) params.is_active = filterActive
       if (filterCurrency) params.currency_code = filterCurrency
       setData(await getAccounts(params))
@@ -199,7 +199,7 @@ export default function AccountsPage() {
         <Table
           rowKey="id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={{ pageSize: 20 }}
           bordered

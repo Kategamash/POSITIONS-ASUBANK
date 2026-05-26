@@ -1,6 +1,6 @@
 import client from './client'
 
-export const getPayments = (params) =>
+export const getPayments = (params = {}) =>
   client.get('/payments/', { params }).then((r) => r.data)
 
 export const getPayment = (id) =>
