@@ -1,6 +1,8 @@
 # ─── Python ───────────────────────────────────────────────────────────────────
 __pycache__/
+**/__pycache__/
 *.py[cod]
+*.cpython-*.pyc
 *.pyo
 *.pyd
 *.so
@@ -32,8 +34,10 @@ htmlcov/
 .pyright/
 
 # ─── Node / Frontend ──────────────────────────────────────────────────────────
+node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
 frontend/.env
 frontend/.env.*
 !frontend/.env.example
