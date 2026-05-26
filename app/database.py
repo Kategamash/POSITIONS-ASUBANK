@@ -1,10 +1,18 @@
+from urllib.parse import quote_plus
+
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sshtunnel import SSHTunnelForwarder
 
 from app.config import settings
 
 _tunnel: SSHTunnelForwarder | None = None
+_engine: Engine | None = None
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 def _start_tunnel() -> SSHTunnelForwarder:
@@ -18,27 +26,34 @@ def _start_tunnel() -> SSHTunnelForwarder:
     return tunnel
 
 
-def _make_engine():
+def get_database_url(host: str, port: int) -> str:
+    return (
+        f"postgresql://{quote_plus(settings.DB_USER)}:{quote_plus(settings.DB_PASSWORD)}"
+        f"@{host}:{port}/{settings.DB_NAME}"
+    )
+
+
+def get_engine() -> Engine:
+    global _engine
+    if _engine is not None:
+        return _engine
+
     global _tunnel
     _tunnel = _start_tunnel()
-    local_port = _tunnel.local_bind_port
-    from urllib.parse import quote_plus
-    url = (
-        f"postgresql://{quote_plus(settings.DB_USER)}:{quote_plus(settings.DB_PASSWORD)}"
-        f"@127.0.0.1:{local_port}/{settings.DB_NAME}"
+    _engine = create_engine(
+        get_database_url("127.0.0.1", _tunnel.local_bind_port),
+        pool_pre_ping=True,
+        pool_recycle=300,
     )
-    return create_engine(url, pool_pre_ping=True, pool_recycle=300)
+    SessionLocal.configure(bind=_engine)
+    return _engine
 
 
-engine = _make_engine()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-class Base(DeclarativeBase):
-    pass
+SessionLocal = sessionmaker(autocommit=False, autoflush=False)
 
 
 def get_db():
+    get_engine()
     db = SessionLocal()
     try:
         yield db
