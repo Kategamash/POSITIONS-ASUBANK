@@ -1,0 +1,37 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f5f5f5;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.ant-layout,
+.ant-layout-content {
+  min-width: 0;
+}
+
+.ant-card,
+.ant-table-wrapper {
+  max-width: 100%;
+}
+
+.ant-card-head {
+  min-width: 0;
+}
+
+.ant-card-extra {
+  min-width: 0;
+}

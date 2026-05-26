@@ -34,7 +34,7 @@ export default function AuditPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const params = {}
+      const params: Record<string, any> = {}
       if (filterLogin.trim()) params.login = filterLogin.trim()
       if (filterAction) params.action = filterAction
       setData(await getAuditLog(params))
@@ -141,7 +141,7 @@ export default function AuditPage() {
         <Table
           rowKey="id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={{ pageSize: 25, showSizeChanger: true }}
           bordered

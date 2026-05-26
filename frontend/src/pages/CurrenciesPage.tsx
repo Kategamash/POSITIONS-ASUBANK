@@ -15,7 +15,7 @@ export default function CurrenciesPage() {
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<any>()
 
   const load = async () => {
     setLoading(true)
@@ -129,7 +129,7 @@ export default function CurrenciesPage() {
         <Table
           rowKey="code"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={false}
           bordered

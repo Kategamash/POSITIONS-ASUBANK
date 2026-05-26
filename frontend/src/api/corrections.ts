@@ -1,6 +1,6 @@
 import client from './client'
 
-export const getCorrections = (params) =>
+export const getCorrections = (params = {}) =>
   client.get('/corrections/', { params }).then((r) => r.data)
 
 export const createCorrection = (data) =>

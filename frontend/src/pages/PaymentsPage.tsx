@@ -21,12 +21,12 @@ export default function PaymentsPage() {
   const [saving, setSaving] = useState(false)
   const [filterAccount, setFilterAccount] = useState(null)
   const [filterDate, setFilterDate] = useState(null)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<any>()
 
   const load = async () => {
     setLoading(true)
     try {
-      const params = {}
+      const params: Record<string, any> = {}
       if (filterAccount) params.account_id = filterAccount
       if (filterDate) params.value_date = filterDate.format('YYYY-MM-DD')
       setData(await getPayments(params))
@@ -189,7 +189,7 @@ export default function PaymentsPage() {
         <Table
           rowKey="id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={{ pageSize: 20 }}
           bordered

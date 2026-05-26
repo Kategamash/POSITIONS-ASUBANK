@@ -21,7 +21,7 @@ export default function CorrectionsPage() {
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<any>()
 
   // For the create correction flow
   const [selectedAccount, setSelectedAccount] = useState(null)
@@ -167,7 +167,7 @@ export default function CorrectionsPage() {
         <Table
           rowKey="id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={{ pageSize: 20 }}
           bordered

@@ -30,10 +30,18 @@ export default function LoginPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: 16,
         background: 'linear-gradient(135deg, #0d1b2a 0%, #1b263b 50%, #1a3a5c 100%)',
       }}
     >
-      <Card style={{ width: 420, borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }} bordered={false}>
+      <Card
+        style={{
+          width: 'min(420px, 100%)',
+          borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}
+        variant="borderless"
+      >
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <BankOutlined style={{ fontSize: 40, color: '#1677ff', marginBottom: 12 }} />
           <Title level={3} style={{ marginBottom: 4 }}>

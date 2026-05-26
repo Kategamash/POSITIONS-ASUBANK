@@ -1,6 +1,6 @@
 import client from './client'
 
-export const getAccounts = (params) =>
+export const getAccounts = (params = {}) =>
   client.get('/accounts/', { params }).then((r) => r.data)
 
 export const getAccount = (id) =>

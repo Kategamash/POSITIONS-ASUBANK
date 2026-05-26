@@ -21,12 +21,12 @@ export default function OpeningBalancesPage() {
   const [saving, setSaving] = useState(false)
   const [filterDate, setFilterDate] = useState(null)
   const [filterAccount, setFilterAccount] = useState(null)
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<any>()
 
   const load = async () => {
     setLoading(true)
     try {
-      const params = {}
+      const params: Record<string, any> = {}
       if (filterDate) params.date = filterDate.format('YYYY-MM-DD')
       if (filterAccount) params.account_id = filterAccount
       setData(await getOpeningBalances(params))
@@ -175,7 +175,7 @@ export default function OpeningBalancesPage() {
         <Table
           rowKey="id"
           dataSource={data}
-          columns={columns}
+          columns={columns as any}
           loading={loading}
           pagination={{ pageSize: 20 }}
           bordered

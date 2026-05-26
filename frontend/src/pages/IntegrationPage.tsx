@@ -148,7 +148,7 @@ export default function IntegrationPage() {
                 <Table
                   rowKey="id"
                   dataSource={fxDeals.deals}
-                  columns={fxDealColumns}
+                  columns={fxDealColumns as any}
                   pagination={false}
                   size="small"
                   bordered
@@ -207,7 +207,7 @@ export default function IntegrationPage() {
                 <Table
                   rowKey="account_number"
                   dataSource={reportData.positions}
-                  columns={reportColumns}
+                  columns={reportColumns as any}
                   pagination={false}
                   size="small"
                   bordered

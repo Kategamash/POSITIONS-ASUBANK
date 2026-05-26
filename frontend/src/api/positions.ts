@@ -1,12 +1,12 @@
 import client from './client'
 
-export const getPositions = (params) =>
+export const getPositions = (params = {}) =>
   client.get('/positions/', { params }).then((r) => r.data)
 
-export const getPosition = (accountId, params) =>
+export const getPosition = (accountId, params = {}) =>
   client.get(`/positions/${accountId}`, { params }).then((r) => r.data)
 
-export const getOpeningBalances = (params) =>
+export const getOpeningBalances = (params = {}) =>
   client.get('/positions/opening-balances/', { params }).then((r) => r.data)
 
 export const createOpeningBalance = (data) =>
