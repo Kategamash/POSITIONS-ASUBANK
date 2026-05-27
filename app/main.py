@@ -25,6 +25,18 @@ app.add_middleware(
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
+    # Идемпотентный seed (контролируется AUTO_SEED, по умолчанию включён).
+    import os
+
+    if str(os.getenv("AUTO_SEED", "true")).lower() in ("1", "true", "yes"):
+        try:
+            from app.seed_data import seed_default_data
+
+            seed_default_data()
+        except Exception as exc:  # noqa: BLE001
+            import logging
+
+            logging.getLogger(__name__).warning("Авто-seed пропущен: %s", exc)
 
 
 app.include_router(auth.router)
