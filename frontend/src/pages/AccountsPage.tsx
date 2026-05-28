@@ -8,6 +8,7 @@ import { getAccounts, createAccount, updateAccount } from '../api/accounts'
 import { getCurrencies } from '../api/currencies'
 import { useAuth } from '../context/AuthContext'
 import { formatAmount } from '../utils/format'
+import AccountDrawer from '../components/AccountDrawer'
 
 const { Title } = Typography
 
@@ -21,6 +22,7 @@ export default function AccountsPage() {
   const [saving, setSaving] = useState(false)
   const [filterActive, setFilterActive] = useState(null)
   const [filterCurrency, setFilterCurrency] = useState(null)
+  const [drawerAccount, setDrawerAccount] = useState(null)
   const [form] = Form.useForm<any>()
 
   const load = async () => {
@@ -204,8 +206,18 @@ export default function AccountsPage() {
           pagination={{ pageSize: 20 }}
           bordered
           size="middle"
+          onRow={(record) => ({
+            onClick: (e) => {
+              // Не открывать drawer при клике на кнопку редактирования
+              if ((e.target as HTMLElement).closest('button')) return
+              setDrawerAccount(record)
+            },
+            style: { cursor: 'pointer' },
+          })}
         />
       </Card>
+
+      <AccountDrawer account={drawerAccount} onClose={() => setDrawerAccount(null)} />
 
       <Modal
         title={editRecord ? 'Редактировать счёт' : 'Создать счёт ностро'}

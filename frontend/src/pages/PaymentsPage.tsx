@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import {
   Table, Button, Modal, Form, Select, DatePicker, InputNumber,
-  Space, Typography, Tag, message, Card,
+  Space, Typography, Tag, message, Card, Descriptions, Spin, Divider,
 } from 'antd'
-import { SendOutlined } from '@ant-design/icons'
+import { SendOutlined, LinkOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { getPayments, sendIncomingPayment } from '../api/payments'
 import { getAccounts } from '../api/accounts'
 import { getCurrencies } from '../api/currencies'
+import { getFxDeal } from '../api/integration'
 import { formatAmount, formatDate, generateUUID } from '../utils/format'
 
 const { Title, Text } = Typography
@@ -21,7 +22,24 @@ export default function PaymentsPage() {
   const [saving, setSaving] = useState(false)
   const [filterAccount, setFilterAccount] = useState(null)
   const [filterDate, setFilterDate] = useState(null)
+  const [dealModalOpen, setDealModalOpen] = useState(false)
+  const [dealData, setDealData] = useState<any>(null)
+  const [dealLoading, setDealLoading] = useState(false)
   const [form] = Form.useForm<any>()
+
+  const openDeal = async (dealId: string) => {
+    setDealData(null)
+    setDealModalOpen(true)
+    setDealLoading(true)
+    try {
+      setDealData(await getFxDeal(dealId))
+    } catch {
+      message.error('Не удалось загрузить данные сделки FX')
+      setDealModalOpen(false)
+    } finally {
+      setDealLoading(false)
+    }
+  }
 
   const load = async () => {
     setLoading(true)
@@ -130,13 +148,20 @@ export default function PaymentsPage() {
         ),
     },
     {
-      title: 'ID сделки FX',
+      title: 'Сделка FX',
       dataIndex: 'fx_deal_id',
       key: 'fx_deal_id',
-      ellipsis: true,
       render: (v) =>
         v ? (
-          <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#595959' }}>{v}</span>
+          <Button
+            type="link"
+            size="small"
+            icon={<LinkOutlined />}
+            style={{ fontFamily: 'monospace', fontSize: 11, padding: 0 }}
+            onClick={(e) => { e.stopPropagation(); openDeal(v) }}
+          >
+            {String(v).slice(0, 8)}…
+          </Button>
         ) : (
           <Text type="secondary">—</Text>
         ),
@@ -196,6 +221,65 @@ export default function PaymentsPage() {
           size="middle"
         />
       </Card>
+
+      {/* Детали сделки FX */}
+      <Modal
+        title="Сделка FX"
+        open={dealModalOpen}
+        onCancel={() => { setDealModalOpen(false); setDealData(null) }}
+        footer={null}
+        width={560}
+      >
+        {dealLoading ? (
+          <div style={{ textAlign: 'center', padding: 32 }}><Spin /></div>
+        ) : dealData ? (
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Descriptions bordered size="small" column={2}>
+              <Descriptions.Item label="Тип">
+                <Tag>{dealData.type}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Статус">
+                <Tag color="success">{dealData.status}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Валюта покупки">
+                <Tag color="blue">{dealData.buy_currency}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Валюта продажи">
+                <Tag color="orange">{dealData.sell_currency}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Сумма">
+                {dealData.amount != null ? formatAmount(dealData.amount) : '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Курс">
+                {dealData.rate ?? '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Дата сделки">
+                {dealData.trade_date ? formatDate(dealData.trade_date) : '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Дата валютирования">
+                {dealData.value_date ? formatDate(dealData.value_date) : '—'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Трейдер" span={2}>
+                <Text code>{dealData.trader ?? '—'}</Text>
+              </Descriptions.Item>
+              {dealData.counterparty && (
+                <Descriptions.Item label="Контрагент" span={2}>
+                  {dealData.counterparty}
+                </Descriptions.Item>
+              )}
+              {dealData.comment && (
+                <Descriptions.Item label="Комментарий" span={2}>
+                  {dealData.comment}
+                </Descriptions.Item>
+              )}
+            </Descriptions>
+            <Divider style={{ margin: '4px 0' }} />
+            <Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>
+              ID: {dealData.id}
+            </Text>
+          </Space>
+        ) : null}
+      </Modal>
 
       <Modal
         title="Симулировать входящий платёж от FX-АСУБАНК"

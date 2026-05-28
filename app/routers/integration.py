@@ -44,6 +44,49 @@ async def fx_health():
     return r.json()
 
 
+@router.get("/fx/deals/{deal_id}", summary="Сделка FX по ID")
+async def get_fx_deal(
+    deal_id: str,
+    request: Request,
+    current_user: CurrentUser,
+):
+    _ = current_user
+    headers = {"Authorization": _bearer_from_request(request)}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        try:
+            r = await client.get(
+                f"{FX_BASE_URL.rstrip('/')}/api/v1/deals/{deal_id}",
+                headers=headers,
+            )
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=503, detail=f"FX недоступен: {exc}") from exc
+
+    if r.status_code >= 400:
+        try:
+            detail = r.json()
+        except Exception:  # noqa: BLE001
+            detail = r.text or "Ошибка FX"
+        raise HTTPException(status_code=r.status_code, detail=detail)
+
+    item = r.json()
+    return {
+        "id": item.get("id"),
+        "type": item.get("deal_type"),
+        "status": item.get("status"),
+        "validation_status": item.get("validation_status"),
+        "buy_currency": item.get("buy_currency") or item.get("buyCurrency"),
+        "sell_currency": item.get("sell_currency") or item.get("sellCurrency"),
+        "amount": item.get("amount"),
+        "rate": item.get("rate"),
+        "value_date": item.get("value_date") or item.get("valueDate"),
+        "trade_date": item.get("trade_date") or item.get("tradeDate"),
+        "trader": item.get("trader_email") or item.get("traderEmail") or item.get("trader_id"),
+        "counterparty": item.get("counterparty_name") or item.get("counterpartyName"),
+        "comment": item.get("comment"),
+        "payments": item.get("payments", []),
+    }
+
+
 @router.get("/fx/deals", summary="Реальные FX-сделки из FX-DEAL-MANAGER")
 async def list_fx_deals(
     request: Request,
