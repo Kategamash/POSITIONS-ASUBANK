@@ -21,8 +21,9 @@ ROLE_ADMIN = "ADMIN"
 
 log = logging.getLogger(__name__)
 
-JWT_ISSUER = os.getenv("JWT_ISSUER", "http://identity-provider:8083")
-JWKS_URL = os.getenv("JWKS_URL", f"{JWT_ISSUER}/.well-known/jwks.json")
+DEFAULT_IDP_URL = "http://185.17.3.75:8083"
+JWT_ISSUER = os.getenv("JWT_ISSUER")
+JWKS_URL = os.getenv("JWKS_URL", f"{(JWT_ISSUER or DEFAULT_IDP_URL).rstrip('/')}/.well-known/jwks.json")
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -59,12 +60,17 @@ class ServicePrincipal:
 def _decode(token: str) -> dict:
     try:
         signing_key = _jwks_client().get_signing_key_from_jwt(token)
+        kwargs = {"issuer": JWT_ISSUER} if JWT_ISSUER else {}
         return jwt.decode(
             token,
             signing_key.key,
             algorithms=["RS256"],
-            issuer=JWT_ISSUER,
-            options={"require": ["sub", "iss", "exp", "iat", "jti", "token_type"]},
+            options={
+                "require": ["sub", "iss", "exp", "iat", "jti"],
+                "verify_iss": bool(JWT_ISSUER),
+                "verify_aud": False,
+            },
+            **kwargs,
         )
     except jwt.PyJWTError as exc:
         log.warning("JWT validation failed: %s", exc)
@@ -98,21 +104,22 @@ def get_current_user(
 ) -> IdPUser:
     token = _extract_token(request, credentials)
     claims = _decode(token)
-    if claims.get("token_type") != "user":
+    token_type = claims.get("token_type")
+    if token_type not in (None, "user", "access"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Требуется пользовательский токен",
         )
-    role = str(claims.get("role") or "AUDITOR").upper()
+    role = str(claims.get("role") or "AUDITOR").upper().removeprefix("ROLE_")
     if role not in (ROLE_TRADER, ROLE_POSITIONER, ROLE_AUDITOR, ROLE_ADMIN):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Неизвестная роль: {role}",
         )
     email = str(claims.get("email") or claims.get("sub"))
-    full_name = " ".join(
-        part for part in (claims.get("first_name"), claims.get("last_name")) if part
-    ) or email
+    first_name = claims.get("first_name") or claims.get("firstName")
+    last_name = claims.get("last_name") or claims.get("lastName")
+    full_name = " ".join(part for part in (first_name, last_name) if part) or email
     user_id = str(claims.get("user_id") or claims["sub"])
 
     # Зеркалим IdP-пользователя в локальной БД для FK на audit/corrections.
@@ -196,7 +203,7 @@ def require_user_or_service_scope(*allowed_service_scopes: str):
         token = _extract_token(request, credentials)
         claims = _decode(token)
         token_type = claims.get("token_type")
-        if token_type == "user":
+        if token_type in (None, "user", "access"):
             return claims
         if token_type != "service":
             raise HTTPException(

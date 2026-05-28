@@ -19,7 +19,7 @@ from app.dependencies import CurrentUser
 
 router = APIRouter(prefix="/auth", tags=["Авторизация"])
 
-IDP_BASE_URL = os.getenv("IDP_BASE_URL", os.getenv("JWT_ISSUER", "http://identity-provider:8083"))
+IDP_BASE_URL = os.getenv("IDP_BASE_URL", os.getenv("JWT_ISSUER", "http://185.17.3.75:8083"))
 
 
 @router.post("/login", summary="Вход через Identity Provider")
@@ -59,13 +59,13 @@ async def login(body: dict, response: Response):
             import jwt as _jwt
 
             claims = _jwt.decode(access, options={"verify_signature": False})
+            first_name = claims.get("first_name") or claims.get("firstName")
+            last_name = claims.get("last_name") or claims.get("lastName")
+            email_claim = claims.get("email") or claims.get("sub")
             user_info = {
                 "id": claims.get("user_id") or claims.get("sub"),
-                "login": claims.get("email") or claims.get("sub"),
-                "full_name": " ".join(
-                    p for p in (claims.get("first_name"), claims.get("last_name")) if p
-                )
-                or claims.get("email"),
+                "login": email_claim,
+                "full_name": " ".join(p for p in (first_name, last_name) if p) or email_claim,
                 "role": claims.get("role"),
                 "is_active": True,
             }

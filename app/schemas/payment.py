@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import AliasChoices, BaseModel, Field
 
 
 class PaymentBase(BaseModel):
@@ -31,11 +31,19 @@ class IncomingPaymentFromFX(BaseModel):
     Можно указывать счёт либо UUID (account_id), либо номером (account_number).
     """
 
-    deal_id: UUID
-    currency_code: str
+    deal_id: UUID = Field(validation_alias=AliasChoices("deal_id", "dealId", "fx_deal_id", "fxDealId"))
+    currency_code: str = Field(validation_alias=AliasChoices("currency_code", "currencyCode"))
     amount: Decimal
-    value_date: date
-    direction: str  # IN / OUT
-    account_id: Optional[UUID] = None
-    account_number: Optional[str] = None
-    correlation_id: Optional[str] = None
+    value_date: date = Field(validation_alias=AliasChoices("value_date", "valueDate"))
+    direction: str = Field(validation_alias=AliasChoices("direction", "payment_direction", "paymentDirection"))  # IN / OUT
+    account_id: Optional[UUID] = Field(default=None, validation_alias=AliasChoices("account_id", "accountId"))
+    account_number: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("account_number", "accountNumber", "account_code", "accountCode"),
+    )
+    correlation_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("correlation_id", "correlationId"),
+    )
+
+    model_config = {"populate_by_name": True, "extra": "ignore"}

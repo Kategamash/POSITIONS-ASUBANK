@@ -41,7 +41,7 @@ def _resolve_url() -> str:
         local_port = _tunnel.local_bind_port
         return (
             f"postgresql+psycopg2://{quote_plus(settings.DB_USER)}:{quote_plus(settings.DB_PASSWORD)}"
-            f"@127.0.0.1:{local_port}/{settings.DB_NAME}"
+            f"@127.0.0.1:{local_port}/{settings.DB_NAME}?gssencmode=disable"
         )
 
     # Дефолт для локального docker-compose.
