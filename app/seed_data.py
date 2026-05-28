@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -83,13 +83,15 @@ def _ensure_opening_balances(db: Session, accounts: list[Account]) -> None:
     today = date.today()
     initial = [1_200_000, 850_000, 5_000_000, 100_000_000]
     for acc, amount in zip(accounts, initial):
-        existing = (
-            db.query(OpeningBalance)
-            .filter(OpeningBalance.account_id == acc.id, OpeningBalance.date == today)
-            .first()
-        )
-        if not existing:
-            db.add(OpeningBalance(account_id=acc.id, date=today, amount=amount))
+        for day_offset in range(30):
+            target_date = today - timedelta(days=day_offset)
+            existing = (
+                db.query(OpeningBalance)
+                .filter(OpeningBalance.account_id == acc.id, OpeningBalance.date == target_date)
+                .first()
+            )
+            if not existing:
+                db.add(OpeningBalance(account_id=acc.id, date=target_date, amount=amount))
 
 
 def seed_default_data() -> None:

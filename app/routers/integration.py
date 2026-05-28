@@ -134,6 +134,8 @@ def export_positions_for_reports(
                 "turnover_in": float(pos.turnover_in),
                 "turnover_out": float(pos.turnover_out),
                 "current_position": float(pos.current_position),
+                "limit_exceeded": pos.limit_exceeded,
+                "limit_amount": float(pos.limit) if pos.limit is not None else None,
             }
         )
     return {

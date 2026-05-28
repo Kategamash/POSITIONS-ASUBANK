@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import {
   Table, DatePicker, Select, Space, Typography, Tag, Row, Col, Card,
-  Statistic, Tooltip, Grid,
+  Statistic, Tooltip, Grid, Button, message,
 } from 'antd'
 import {
   ExclamationCircleOutlined, ArrowUpOutlined, CheckCircleOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { getPositions } from '../api/positions'
 import { getCurrencies } from '../api/currencies'
+import { createReport, pollReport, downloadReport, getReportTemplates, ReportTemplate } from '../api/reports'
 import { formatAmount } from '../utils/format'
 
 const { Title } = Typography
@@ -21,6 +23,9 @@ export default function PositionsPage() {
   const [loading, setLoading] = useState(false)
   const [date, setDate] = useState(dayjs())
   const [currencyFilter, setCurrencyFilter] = useState(null)
+  const [reportTemplates, setReportTemplates] = useState<ReportTemplate[]>([])
+  const [selectedReportCode, setSelectedReportCode] = useState('TURNOVER_DAY')
+  const [selectedFormat, setSelectedFormat] = useState('html')
 
   const load = async () => {
     setLoading(true)
@@ -37,6 +42,7 @@ export default function PositionsPage() {
 
   useEffect(() => {
     getCurrencies().then(setCurrencies).catch(() => {})
+    getReportTemplates().then(setReportTemplates).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -45,6 +51,30 @@ export default function PositionsPage() {
 
   const exceededCount = data.filter((d) => d.limit_exceeded).length
   const isCompact = !screens.sm
+  const [reportLoading, setReportLoading] = useState(false)
+
+  const handleDownloadReport = async () => {
+    setReportLoading(true)
+    const key = 'report-msg'
+    try {
+      message.loading({ content: 'Запрос отчёта в сервисе ОТЧЁТЫ...', key, duration: 0 })
+      const rep = await createReport(date.format('YYYY-MM-DD'), selectedReportCode, selectedFormat)
+      message.loading({ content: 'Генерация отчёта...', key, duration: 0 })
+      await pollReport(rep.id)
+      message.loading({ content: 'Скачивание...', key, duration: 0 })
+      await downloadReport(rep.id, selectedFormat, selectedReportCode)
+      message.success({ content: 'Отчёт скачан', key, duration: 3 })
+    } catch (err: any) {
+      message.error({ content: err.message || 'Ошибка при получении отчёта', key, duration: 5 })
+    } finally {
+      setReportLoading(false)
+    }
+  }
+
+  const selectedTemplate = reportTemplates.find((t) => t.code === selectedReportCode)
+  const formatOptions = selectedTemplate
+    ? selectedTemplate.available_formats.map((f) => ({ value: f, label: f.toUpperCase() }))
+    : [{ value: 'html', label: 'HTML' }]
 
   const filters = (
     <Space wrap style={{ width: isCompact ? '100%' : undefined }}>
@@ -62,6 +92,35 @@ export default function PositionsPage() {
         onChange={setCurrencyFilter}
         options={currencies.map((c) => ({ value: c.code, label: c.code }))}
       />
+      <Select
+        value={selectedReportCode}
+        onChange={(v) => {
+          setSelectedReportCode(v)
+          const tpl = reportTemplates.find((t) => t.code === v)
+          if (tpl && !tpl.available_formats.includes(selectedFormat)) {
+            setSelectedFormat(tpl.available_formats[0])
+          }
+        }}
+        style={{ width: isCompact ? '100%' : 180 }}
+        options={
+          reportTemplates.length > 0
+            ? reportTemplates.map((t) => ({ value: t.code, label: t.name }))
+            : [{ value: 'TURNOVER_DAY', label: 'Движение средств за день' }]
+        }
+      />
+      <Select
+        value={selectedFormat}
+        onChange={setSelectedFormat}
+        style={{ width: isCompact ? '100%' : 80 }}
+        options={formatOptions}
+      />
+      <Button
+        icon={<DownloadOutlined />}
+        loading={reportLoading}
+        onClick={handleDownloadReport}
+      >
+        Скачать
+      </Button>
     </Space>
   )
 
