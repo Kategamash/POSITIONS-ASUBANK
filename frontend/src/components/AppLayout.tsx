@@ -33,7 +33,7 @@ export default function AppLayout() {
   const screens = useBreakpoint()
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, logout, isAdmin } = useAuth()
+  const { user, logout, isAdmin, isTrader } = useAuth()
   const isCompact = !screens.md
 
   const handleLogout = async () => {
@@ -52,11 +52,15 @@ export default function AppLayout() {
       icon: <BankOutlined />,
       label: 'Счета ностро',
     },
-    {
-      key: '/opening-balances',
-      icon: <CalendarOutlined />,
-      label: 'Вх. остатки',
-    },
+    ...(!isTrader
+      ? [
+          {
+            key: '/opening-balances',
+            icon: <CalendarOutlined />,
+            label: 'Вх. остатки',
+          },
+        ]
+      : []),
     {
       key: '/corrections',
       icon: <SwapOutlined />,
@@ -72,11 +76,15 @@ export default function AppLayout() {
       icon: <FileTextOutlined />,
       label: 'Валюты',
     },
-    {
-      key: '/integration',
-      icon: <ApiOutlined />,
-      label: 'Интеграция',
-    },
+    ...(!isTrader
+      ? [
+          {
+            key: '/integration',
+            icon: <ApiOutlined />,
+            label: 'Интеграция',
+          },
+        ]
+      : []),
     ...(isAdmin
       ? [
           { type: 'divider' },

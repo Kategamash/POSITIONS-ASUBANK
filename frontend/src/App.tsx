@@ -30,13 +30,43 @@ export default function App() {
             <Route index element={<Navigate to="/positions" replace />} />
             <Route path="/positions" element={<PositionsPage />} />
             <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/opening-balances" element={<OpeningBalancesPage />} />
             <Route path="/corrections" element={<CorrectionsPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/currencies" element={<CurrenciesPage />} />
-            <Route path="/integration" element={<IntegrationPage />} />
-            <Route path="/admin/users" element={<UsersPage />} />
-            <Route path="/admin/audit" element={<AuditPage />} />
+            {/* Только позиционер и администратор */}
+            <Route
+              path="/opening-balances"
+              element={
+                <ProtectedRoute allowedRoles={['POSITIONER', 'ADMIN', 'AUDITOR']}>
+                  <OpeningBalancesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/integration"
+              element={
+                <ProtectedRoute allowedRoles={['POSITIONER', 'ADMIN', 'AUDITOR']}>
+                  <IntegrationPage />
+                </ProtectedRoute>
+              }
+            />
+            {/* Только администратор */}
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/audit"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AuditPage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
