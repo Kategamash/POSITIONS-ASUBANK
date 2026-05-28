@@ -6,6 +6,7 @@ from app.dependencies import require_admin
 from app.models.audit import AuditLog
 from app.models.user import User
 from app.schemas.user import UserRead
+from app.services.nsi_sync import sync_nsi
 
 router = APIRouter(prefix="/admin", tags=["Администрирование"])
 
@@ -18,6 +19,17 @@ router = APIRouter(prefix="/admin", tags=["Администрирование"])
 )
 def list_users(db: Session = Depends(get_db)):
     return db.query(User).order_by(User.login).all()
+
+
+@router.post(
+    "/sync-nsi",
+    summary="Синхронизировать НСИ из REPORTS-ASUBANK (Администратор)",
+    dependencies=[Depends(require_admin)],
+)
+def trigger_nsi_sync(db: Session = Depends(get_db)):
+    """Запрашивает валюты и счета ностро из REPORTS-ASUBANK и добавляет недостающие.
+    Существующие данные и лимиты не перезаписываются."""
+    return sync_nsi(db)
 
 
 @router.get(

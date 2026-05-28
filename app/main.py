@@ -1,8 +1,12 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.routers import auth, accounts, currencies, positions, corrections, payments, admin, integration
+
+log = logging.getLogger(__name__)
 
 app = FastAPI(
     title="ПОЗИЦИИ-АСУБАНК",
@@ -24,19 +28,20 @@ app.add_middleware(
 
 @app.on_event("startup")
 def startup():
-    Base.metadata.create_all(bind=engine)
-    # Идемпотентный seed (контролируется AUTO_SEED, по умолчанию включён).
     import os
+
+    Base.metadata.create_all(bind=engine)
 
     if str(os.getenv("AUTO_SEED", "true")).lower() in ("1", "true", "yes"):
         try:
             from app.seed_data import seed_default_data
-
             seed_default_data()
         except Exception as exc:  # noqa: BLE001
-            import logging
+            log.warning("Авто-seed пропущен: %s", exc)
 
-            logging.getLogger(__name__).warning("Авто-seed пропущен: %s", exc)
+    if str(os.getenv("NSI_AUTO_SYNC", "true")).lower() in ("1", "true", "yes"):
+        from app.services.nsi_sync import start_sync_thread
+        start_sync_thread()
 
 
 app.include_router(auth.router)

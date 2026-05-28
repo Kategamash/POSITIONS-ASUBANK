@@ -20,37 +20,58 @@ _DEFAULT_CURRENCIES = [
     ("EUR", "Евро", 2),
     ("RUB", "Российский рубль", 2),
     ("CNY", "Китайский юань", 2),
-    ("GBP", "Британский фунт", 2),
+    ("GBP", "Фунт стерлингов", 2),
+    ("CHF", "Швейцарский франк", 2),
+    ("JPY", "Японская иена", 0),
+    ("KZT", "Казахстанский тенге", 2),
+    ("TRY", "Турецкая лира", 2),
+    ("AUD", "Австралийский доллар", 2),
 ]
 
+# Номера счетов синхронизированы с НСИ REPORTS-ASUBANK (reports-asubank/app/core/seed.py).
+# Лимиты — оперативные данные POSITIONS, в REPORTS не хранятся.
 _DEFAULT_ACCOUNTS = [
     dict(
-        account_number="363000001",
-        name="Ностро USD в Citi NA",
+        account_number="30101810400000000225",
+        name="Корреспондентский счёт RUB",
+        currency_code="RUB",
+        correspondent_bank="Банк России",
+        limit=150_000_000,
+    ),
+    dict(
+        account_number="30101810200000000999",
+        name="Nostro USD New York",
         currency_code="USD",
-        correspondent_bank="Citi NA, New York",
+        correspondent_bank="Global Clearing Bank NY",
         limit=2_000_000,
     ),
     dict(
-        account_number="363000002",
-        name="Ностро EUR в Deutsche Bank",
+        account_number="30101810900000000888",
+        name="Nostro EUR Frankfurt",
         currency_code="EUR",
-        correspondent_bank="Deutsche Bank AG, Frankfurt",
+        correspondent_bank="Euro Settlement Bank",
         limit=1_500_000,
     ),
     dict(
-        account_number="363000003",
-        name="Ностро CNY в BOC Hong Kong",
+        account_number="30101810600000000777",
+        name="Nostro GBP London",
+        currency_code="GBP",
+        correspondent_bank="Global Markets Bank London",
+        limit=5_000_000,
+    ),
+    dict(
+        account_number="30101810800000000666",
+        name="Nostro CNY Shanghai",
         currency_code="CNY",
-        correspondent_bank="Bank of China, Hong Kong",
+        correspondent_bank="Shanghai Treasury Bank",
         limit=8_000_000,
     ),
     dict(
-        account_number="40702810000000000001",
-        name="АСУБАНК Nostro RUB",
-        currency_code="RUB",
-        correspondent_bank="АСУБАНК",
-        limit=150_000_000,
+        account_number="30101810700000000555",
+        name="Nostro CHF Zurich",
+        currency_code="CHF",
+        correspondent_bank="Helvetia Private Bank",
+        limit=3_000_000,
     ),
 ]
 
@@ -82,7 +103,8 @@ def _ensure_accounts(db: Session) -> list[Account]:
 
 def _ensure_opening_balances(db: Session, accounts: list[Account]) -> None:
     today = date.today()
-    initial = [1_200_000, 850_000, 5_000_000, 100_000_000]
+    # Порядок соответствует _DEFAULT_ACCOUNTS: RUB, USD, EUR, GBP, CNY, CHF
+    initial = [100_000_000, 1_200_000, 850_000, 500_000, 5_000_000, 1_000_000]
     for acc, amount in zip(accounts, initial):
         for day_offset in range(30):
             target_date = today - timedelta(days=day_offset)
