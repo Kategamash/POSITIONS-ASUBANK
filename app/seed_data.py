@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 
 from sqlalchemy.orm import Session
 
@@ -29,28 +29,28 @@ _DEFAULT_ACCOUNTS = [
         name="Ностро USD в Citi NA",
         currency_code="USD",
         correspondent_bank="Citi NA, New York",
-        limit=2_000_000,
+        limit=500000,
     ),
     dict(
         account_number="363000002",
         name="Ностро EUR в Deutsche Bank",
         currency_code="EUR",
         correspondent_bank="Deutsche Bank AG, Frankfurt",
-        limit=1_500_000,
+        limit=300000,
     ),
     dict(
         account_number="363000003",
         name="Ностро CNY в BOC Hong Kong",
         currency_code="CNY",
         correspondent_bank="Bank of China, Hong Kong",
-        limit=8_000_000,
+        limit=2000000,
     ),
     dict(
         account_number="40702810000000000001",
         name="АСУБАНК Nostro RUB",
         currency_code="RUB",
         correspondent_bank="АСУБАНК",
-        limit=150_000_000,
+        limit=2_000_000_000,
     ),
 ]
 
@@ -83,15 +83,13 @@ def _ensure_opening_balances(db: Session, accounts: list[Account]) -> None:
     today = date.today()
     initial = [1_200_000, 850_000, 5_000_000, 100_000_000]
     for acc, amount in zip(accounts, initial):
-        for day_offset in range(30):
-            target_date = today - timedelta(days=day_offset)
-            existing = (
-                db.query(OpeningBalance)
-                .filter(OpeningBalance.account_id == acc.id, OpeningBalance.date == target_date)
-                .first()
-            )
-            if not existing:
-                db.add(OpeningBalance(account_id=acc.id, date=target_date, amount=amount))
+        existing = (
+            db.query(OpeningBalance)
+            .filter(OpeningBalance.account_id == acc.id, OpeningBalance.date == today)
+            .first()
+        )
+        if not existing:
+            db.add(OpeningBalance(account_id=acc.id, date=today, amount=amount))
 
 
 def seed_default_data() -> None:

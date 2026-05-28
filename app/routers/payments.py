@@ -1,12 +1,13 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies import CurrentUser, ServicePrincipal, require_service_scope
 from app.models.account import Account
+from app.models.audit import AuditLog
 from app.models.currency import Currency
 from app.models.payment import Payment
 from app.schemas.payment import IncomingPaymentFromFX, PaymentRead
@@ -45,6 +46,7 @@ def get_payment(payment_id: UUID, current_user: CurrentUser, db: Session = Depen
 )
 def receive_payment_from_fx(
     body: IncomingPaymentFromFX,
+    request: Request,
     service: ServicePrincipal = Depends(require_service_scope("fx-dealing:write")),
     db: Session = Depends(get_db),
 ):
@@ -58,7 +60,14 @@ def receive_payment_from_fx(
     if body.account_id:
         account = db.query(Account).filter(Account.id == body.account_id).first()
     elif body.account_number:
-        account = db.query(Account).filter(Account.account_number == body.account_number).first()
+        account = (
+            db.query(Account)
+            .filter(
+                (Account.account_number == body.account_number)
+                | (Account.name == body.account_number)
+            )
+            .first()
+        )
 
     if not account:
         raise HTTPException(
@@ -85,6 +94,25 @@ def receive_payment_from_fx(
     db.flush()
 
     result = process_incoming_payment(db, payment)
+    db.add(AuditLog(
+        login=service.client_id,
+        action="FX_PAYMENT_RECEIVED",
+        entity="payments",
+        entity_id=str(payment.id),
+        details={
+            "service": service.service,
+            "scopes": list(service.scopes),
+            "deal_id": str(body.deal_id),
+            "account_number": account.account_number,
+            "currency_code": body.currency_code.upper(),
+            "amount": float(body.amount),
+            "direction": body.direction,
+            "value_date": str(body.value_date),
+            "correlation_id": body.correlation_id,
+            **result,
+        },
+        ip_address=request.client.host if request.client else None,
+    ))
     db.commit()
 
     return {
