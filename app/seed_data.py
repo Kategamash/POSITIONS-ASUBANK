@@ -29,28 +29,28 @@ _DEFAULT_ACCOUNTS = [
         name="Ностро USD в Citi NA",
         currency_code="USD",
         correspondent_bank="Citi NA, New York",
-        limit=500000,
+        limit=2_000_000,
     ),
     dict(
         account_number="363000002",
         name="Ностро EUR в Deutsche Bank",
         currency_code="EUR",
         correspondent_bank="Deutsche Bank AG, Frankfurt",
-        limit=300000,
+        limit=1_500_000,
     ),
     dict(
         account_number="363000003",
         name="Ностро CNY в BOC Hong Kong",
         currency_code="CNY",
         correspondent_bank="Bank of China, Hong Kong",
-        limit=2000000,
+        limit=8_000_000,
     ),
     dict(
         account_number="40702810000000000001",
         name="АСУБАНК Nostro RUB",
         currency_code="RUB",
         correspondent_bank="АСУБАНК",
-        limit=2_000_000_000,
+        limit=150_000_000,
     ),
 ]
 
@@ -70,6 +70,7 @@ def _ensure_accounts(db: Session) -> list[Account]:
             .first()
         )
         if existing:
+            existing.limit = spec["limit"]
             accounts.append(existing)
             continue
         acc = Account(**spec)
