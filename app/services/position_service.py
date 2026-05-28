@@ -67,7 +67,7 @@ def calculate_current_position(
     current = opening + corrections + turnover_in - turnover_out
 
     limit = account.limit
-    exceeded = limit is not None and current < limit
+    exceeded = limit is not None and current > limit
 
     return CurrentPositionRead(
         account_id=account.id,

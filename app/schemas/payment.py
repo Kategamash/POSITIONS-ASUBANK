@@ -26,10 +26,16 @@ class PaymentRead(PaymentBase):
 
 
 class IncomingPaymentFromFX(BaseModel):
-    """Incoming payment schema from FX-ASUBANK"""
+    """Incoming payment from FX-DEAL-MANAGER.
+
+    Можно указывать счёт либо UUID (account_id), либо номером (account_number).
+    """
+
     deal_id: UUID
     currency_code: str
     amount: Decimal
     value_date: date
-    account_id: UUID
     direction: str  # IN / OUT
+    account_id: Optional[UUID] = None
+    account_number: Optional[str] = None
+    correlation_id: Optional[str] = None

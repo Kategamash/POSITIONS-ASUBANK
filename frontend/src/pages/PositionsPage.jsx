@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import {
   Table, DatePicker, Select, Space, Typography, Tag, Row, Col, Card,
-  Statistic, Badge, Tooltip, Spin,
+  Statistic, Tooltip, Button, message,
 } from 'antd'
 import {
   ExclamationCircleOutlined, ArrowUpOutlined, CheckCircleOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { getPositions } from '../api/positions'
 import { getCurrencies } from '../api/currencies'
+import { createReport, pollReport, downloadReport } from '../api/reports'
 import { formatAmount } from '../utils/format'
 
 const { Title } = Typography
@@ -19,6 +21,7 @@ export default function PositionsPage() {
   const [loading, setLoading] = useState(false)
   const [date, setDate] = useState(dayjs())
   const [currencyFilter, setCurrencyFilter] = useState(null)
+  const [reportLoading, setReportLoading] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -42,6 +45,24 @@ export default function PositionsPage() {
   }, [date, currencyFilter])
 
   const exceededCount = data.filter((d) => d.limit_exceeded).length
+
+  const handleDownloadReport = async () => {
+    setReportLoading(true)
+    const key = 'report-msg'
+    try {
+      message.loading({ content: 'Запрос отчёта в сервисе ОТЧЁТЫ...', key, duration: 0 })
+      const rep = await createReport(date.format('YYYY-MM-DD'))
+      message.loading({ content: 'Генерация отчёта...', key, duration: 0 })
+      await pollReport(rep.id)
+      message.loading({ content: 'Скачивание...', key, duration: 0 })
+      await downloadReport(rep.id)
+      message.success({ content: 'Отчёт скачан', key, duration: 3 })
+    } catch (err) {
+      message.error({ content: err.message || 'Ошибка при получении отчёта', key, duration: 5 })
+    } finally {
+      setReportLoading(false)
+    }
+  }
 
   const columns = [
     {
@@ -194,6 +215,13 @@ export default function PositionsPage() {
               onChange={setCurrencyFilter}
               options={currencies.map((c) => ({ value: c.code, label: c.code }))}
             />
+            <Button
+              icon={<DownloadOutlined />}
+              loading={reportLoading}
+              onClick={handleDownloadReport}
+            >
+              Отчёт за дату
+            </Button>
           </Space>
         }
       >

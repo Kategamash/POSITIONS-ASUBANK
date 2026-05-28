@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.dependencies import CurrentUser
+from app.dependencies import CurrentUser, ServicePrincipal, require_service_scope
 from app.models.account import Account
 from app.models.currency import Currency
 from app.models.payment import Payment
@@ -43,15 +43,32 @@ def get_payment(payment_id: UUID, current_user: CurrentUser, db: Session = Depen
     status_code=status.HTTP_201_CREATED,
     summary="Принять платёж от FX-АСУБАНК и обновить позицию",
 )
-def receive_payment_from_fx(body: IncomingPaymentFromFX, db: Session = Depends(get_db)):
+def receive_payment_from_fx(
+    body: IncomingPaymentFromFX,
+    service: ServicePrincipal = Depends(require_service_scope("fx-dealing:write")),
+    db: Session = Depends(get_db),
+):
     """
-    Эндпоинт вызывается системой FX-АСУБАНК при создании/подтверждении сделки.
+    Эндпоинт вызывается системой FX-АСУБАНК при подтверждении сделки позиционером.
     Принимает платёж, создаёт запись и пересчитывает позицию.
+    Можно указать счёт либо account_id (UUID), либо account_number.
     """
-    if not db.query(Account).filter(Account.id == body.account_id).first():
-        raise HTTPException(status_code=400, detail="Счёт не найден")
+    _ = service
+    account = None
+    if body.account_id:
+        account = db.query(Account).filter(Account.id == body.account_id).first()
+    elif body.account_number:
+        account = db.query(Account).filter(Account.account_number == body.account_number).first()
+
+    if not account:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Счёт не найден: account_id={body.account_id}, account_number={body.account_number}"
+            ),
+        )
     if not db.query(Currency).filter(Currency.code == body.currency_code.upper()).first():
-        raise HTTPException(status_code=400, detail="Валюта не найдена")
+        raise HTTPException(status_code=400, detail=f"Валюта не найдена: {body.currency_code}")
     if body.direction not in ("IN", "OUT"):
         raise HTTPException(status_code=400, detail="Направление должно быть IN или OUT")
 
@@ -60,7 +77,7 @@ def receive_payment_from_fx(body: IncomingPaymentFromFX, db: Session = Depends(g
         currency_code=body.currency_code.upper(),
         amount=body.amount,
         value_date=body.value_date,
-        account_id=body.account_id,
+        account_id=account.id,
         direction=body.direction,
         processing_date=date.today(),
     )
@@ -73,5 +90,8 @@ def receive_payment_from_fx(body: IncomingPaymentFromFX, db: Session = Depends(g
     return {
         "status": "accepted",
         "payment_id": str(payment.id),
+        "account_id": str(account.id),
+        "account_number": account.account_number,
+        "correlation_id": body.correlation_id,
         **result,
     }

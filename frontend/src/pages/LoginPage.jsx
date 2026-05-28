@@ -45,10 +45,10 @@ export default function LoginPage() {
         <Form onFinish={onFinish} layout="vertical" size="large" requiredMark={false}>
           <Form.Item
             name="login"
-            label="Логин"
-            rules={[{ required: true, message: 'Введите логин' }]}
+            label="Email"
+            rules={[{ required: true, message: 'Введите email' }]}
           >
-            <Input prefix={<UserOutlined />} placeholder="Введите логин" autoComplete="username" />
+            <Input prefix={<UserOutlined />} placeholder="user@asubank.local" autoComplete="username" />
           </Form.Item>
           <Form.Item
             name="password"
