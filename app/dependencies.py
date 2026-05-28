@@ -127,7 +127,14 @@ def get_current_user(
         record = db.query(User).filter(User.id == user_id).first()
         changed = False
         if record is None:
-            record = User(id=user_id, login=email, full_name=full_name, role=role, is_active=True)
+            record = User(
+                id=user_id,
+                login=email,
+                password_hash="managed-by-idp",
+                full_name=full_name,
+                role=role,
+                is_active=True,
+            )
             db.add(record)
             changed = True
         else:

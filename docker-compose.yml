@@ -1,0 +1,32 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      USE_SSH_TUNNEL: "true"
+      IDP_BASE_URL: "http://185.17.3.75:8083"
+      JWKS_URL: "http://185.17.3.75:8083/.well-known/jwks.json"
+      FX_BASE_URL: "http://185.17.3.75:8000"
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "/api"
+    environment:
+      API_UPSTREAM: "backend:8000"
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_started
